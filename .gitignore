@@ -1,0 +1,8 @@
+*__pycache__/
+*.vscode/
+
+logs/
+dataset/
+checkpoints/
+
+nohup.out

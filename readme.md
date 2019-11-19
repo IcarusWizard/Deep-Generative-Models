@@ -1,0 +1,59 @@
+## Deep Generative Models
+A collection of my PyTorch implementation of several deep generative models.  
+This repertory is in progressing, feel free to raise an issue if you find any bug. 
+
+## Requirement  
+* PyTorch >= 1.0 (This code was develop on 1.2, but it should also work fine on other version)
+* numpy
+* matplotlib
+* tqdm
+
+## Models
+* Auto-regressive
+  * [ ] [PixelRNN](http://arxiv.org/abs/1601.06759)
+  * [ ] [PixelCNN](http://arxiv.org/abs/1601.06759)
+  * [ ] [PixelSNAIL](http://arxiv.org/abs/1712.09763)
+* FLOW
+  - [x] [NICE](https://arxiv.org/abs/1410.8516)
+  - [ ] [RealNVP](http://arxiv.org/abs/1605.08803) (Additive in progress)
+  - [x] [Glow](http://arxiv.org/abs/1807.03039)
+* VAE
+  * [x] [Vanilla VAE](http://arxiv.org/abs/1312.6114)
+  * [x] CNN-VAE
+  * [ ] [VQ-VAE](http://arxiv.org/abs/1711.00937)
+* GAN
+  * [ ] [Vanilla GAN](https://arxiv.org/abs/1406.2661)
+  * [ ] [DCGAN](https://arxiv.org/abs/1511.06434)
+  * [ ] [InfoGAN](http://arxiv.org/abs/1606.03657)
+  * [ ] [WGAN-GP](https://arxiv.org/abs/1704.00028)
+  * [ ] [SNGAN](http://arxiv.org/abs/1802.05957)
+  * [ ] [SAGAN](http://arxiv.org/abs/1805.08318)
+  
+## Datasets  
+* [MNIST](http://yann.lecun.com/exdb/mnist/)
+* [SVHN](http://ufldl.stanford.edu/housenumbers/)
+* [Cifar10](https://www.cs.toronto.edu/~kriz/cifar.html)
+* [CelebA](http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html)
+
+## Code  
+### Structure  
+```
+/dataset       # default dataset folder
+/logs          # default tensorboard log folder
+/checkpoints   # default checkpoints folder
+/models
+    utils.py     # shared utility functions
+    modules.py   # shared utility modules
+    datasets.py  # data utilities
+    /<method>
+        train_utils.py    # training procedure
+        utils.py          # method's utility functions
+        modules.py        # method's utility modules
+        <model.py>        # model class
+    ......
+```
+### Train  
+Run `python train_<model>.py -h` for help.
+
+### Test  
+Run `python test_<model>.py -h` for help.
