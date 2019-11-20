@@ -150,8 +150,8 @@ def config_dataset(args, batch_size=None):
 
         model_param = {
             "c" : 3,
-            "h" : args.image_size,
-            "w" : args.image_size,
+            "h" : 32,
+            "w" : 32,
         }
 
     elif args.dataset == 'celeba64':
@@ -168,8 +168,8 @@ def config_dataset(args, batch_size=None):
 
         model_param = {
             "c" : 3,
-            "h" : args.image_size,
-            "w" : args.image_size,
+            "h" : 64,
+            "w" : 64,
         }
 
     elif args.dataset == 'celeba128':
@@ -186,8 +186,8 @@ def config_dataset(args, batch_size=None):
 
         model_param = {
             "c" : 3,
-            "h" : args.image_size,
-            "w" : args.image_size,
+            "h" : 128,
+            "w" : 128,
         }
 
     else:
