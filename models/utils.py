@@ -162,8 +162,8 @@ def config_dataset(args, batch_size=None):
         test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=100)
 
         filenames = {
-            "log_name" : "{}_CelebA{}".format(args.model, args.image_size),
-            "model_name" : "{}_CelebA{}".format(args.model, args.image_size),
+            "log_name" : "{}_CelebA64".format(args.model),
+            "model_name" : "{}_CelebA64".format(args.model),
         }
 
         model_param = {
