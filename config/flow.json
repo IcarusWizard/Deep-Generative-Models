@@ -1,0 +1,66 @@
+{
+    "NICE" : {
+        "mnist" : {
+            "dataset" : "mnist",
+            "model" : "NICE",
+            "custom" : false,
+            "blocks" : 5,
+            "features" : 1000,
+            "bits" : 8,
+            "actnorm_batch_size" : 16,
+            "seed" : null,
+            "batch_size" : 256,
+            "gpu" : "0",
+            "workers" : 4,
+            "steps" : 20000,
+            "warmup_steps" : 1,
+            "lr" : 1e-3,
+            "beta1" : 0.9,
+            "beta2" : 0.99,
+            "log_step" : 500,
+            "suffix" : null
+        },
+
+        "svhn" : {
+            "dataset" : "svhn",
+            "model" : "NICE",
+            "custom" : false,
+            "blocks" : 4,
+            "features" : 2000,
+            "bits" : 8,
+            "actnorm_batch_size" : 16,
+            "seed" : null,
+            "batch_size" : 256,
+            "gpu" : "0",
+            "workers" : 4,
+            "steps" : 50000,
+            "warmup_steps" : 1,
+            "lr" : 1e-3,
+            "beta1" : 0.9,
+            "beta2" : 0.99,
+            "log_step" : 500,
+            "suffix" : null
+        },
+
+        "cifar" : {
+            "dataset" : "cifar",
+            "model" : "NICE",
+            "custom" : false,
+            "blocks" : 4,
+            "features" : 2000,
+            "bits" : 8,
+            "actnorm_batch_size" : 16,
+            "seed" : null,
+            "batch_size" : 256,
+            "gpu" : "0",
+            "workers" : 4,
+            "steps" : 50000,
+            "warmup_steps" : 1,
+            "lr" : 1e-3,
+            "beta1" : 0.9,
+            "beta2" : 0.99,
+            "log_step" : 500,
+            "suffix" : null
+        }
+    }
+}

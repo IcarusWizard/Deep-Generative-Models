@@ -8,6 +8,7 @@ from ..utils import step_loader, nats2bits
 def config_model(args, model_param):
     if args.model == 'VAE':
         model_param.update({
+            "latent_dim" : args.latent_dim,
             "features" : args.features, 
             "hidden_layers" : args.hidden_layers,
             "output_type" : args.output_type,
@@ -16,6 +17,7 @@ def config_model(args, model_param):
         model = VAE(**model_param)        
     elif args.model == 'CONV-VAE':
         model_param.update({
+            "latent_dim" : args.latent_dim,
             "features" : args.features, 
             "down_sampling" : args.down_sampling,
             "res_layers" : args.hidden_layers,

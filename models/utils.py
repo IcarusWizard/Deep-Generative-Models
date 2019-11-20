@@ -3,7 +3,7 @@ import torch, torchvision, math
 from torch.functional import F
 from torch.nn import Parameter, init
 import matplotlib.pyplot as plt
-import pickle, torch, math, random, os
+import pickle, torch, math, random, os, json
 import PIL.Image as Image
 
 from .datasets import *
@@ -53,6 +53,11 @@ def logit(p):
         p -> tensor \in (0, 1)
     """
     return torch.log(p) - torch.log(1 - p)
+
+def load_config(filename):
+    with open(filename, 'r') as f:
+        d = json.load(f)
+    return d
 
 def config_dataset(args, batch_size=None):
     workers = min(args.workers, os.cpu_count()) # compute actual workers in use

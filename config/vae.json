@@ -1,0 +1,45 @@
+{
+    "VAE" : {
+        "bmnist" : {
+            "dataset" : "bmnist",
+            "model" : "VAE",
+            "custom" : false,
+            "latent_dim" : 2,
+            "hidden_layers" : 5,
+            "features" : 128,
+            "output_type" : "bernoulli",
+            "use_mce" : false,
+            "seed" : null,
+            "batch_size" : 256,
+            "gpu" : "0",
+            "workers" : 4,
+            "steps" : 10000,
+            "lr" : 1e-3,
+            "beta1" : 0.9,
+            "beta2" : 0.999,
+            "log_step" : 500,
+            "suffix" : null
+        },
+
+        "mnist" : {
+            "dataset" : "mnist",
+            "model" : "VAE",
+            "custom" : false,
+            "latent_dim" : 2,
+            "hidden_layers" : 5,
+            "features" : 128,
+            "output_type" : "gauss",
+            "use_mce" : false,
+            "seed" : null,
+            "batch_size" : 256,
+            "gpu" : "0",
+            "workers" : 4,
+            "steps" : 10000,
+            "lr" : 1e-3,
+            "beta1" : 0.9,
+            "beta2" : 0.999,
+            "log_step" : 500,
+            "suffix" : null
+        }
+    }
+}

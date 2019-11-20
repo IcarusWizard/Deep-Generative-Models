@@ -4,6 +4,7 @@ This repertory is in progressing, feel free to raise an issue if you find any bu
 
 ## Requirement  
 * PyTorch >= 1.0 (This code was develop on 1.2, but it should also work fine on other version)
+* tensorboard (tb-nightly)
 * numpy
 * matplotlib
 * tqdm
@@ -41,6 +42,7 @@ This repertory is in progressing, feel free to raise an issue if you find any bu
 /dataset       # default dataset folder
 /logs          # default tensorboard log folder
 /checkpoints   # default checkpoints folder
+/config        # default configurations
 /models
     utils.py     # shared utility functions
     modules.py   # shared utility modules
@@ -53,7 +55,10 @@ This repertory is in progressing, feel free to raise an issue if you find any bu
     ......
 ```
 ### Train  
-Run `python train_<model>.py -h` for help.
+Run `python train_<method>.py --dataset <dataset> --model <model>` to train in default configuration.
+You can run `python check_default_config.py <method>` to find the default configuration we provide, or just look inside `config` folder.  
+If you want to tune some parameters for yourself, pass `--custom` to the training script, run `python train_<method>.py -h` to see all the parameters that you can tune.  
+**Note:** All the default configurations are tested on a single RTX 2080Ti GPU with 11G memory, if you cannot run any default configuration, please consider reduce the batch size or features in config file or with a custom mode.
 
 ### Test  
 Run `python test_<model>.py -h` for help.

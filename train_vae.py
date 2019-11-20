@@ -7,24 +7,24 @@ import os, argparse
 from tqdm import tqdm
 
 from models.vae import config_model, train_vae
-from models.utils import setup_seed, select_gpus, nats2bits, config_dataset
+from models.utils import setup_seed, select_gpus, nats2bits, config_dataset, load_config
 
-from models.vae import LOGDIR, MODELDIR, VERSION
+from models.vae import LOGDIR, MODELDIR, VERSION, CONFIG
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    data_parser = parser.add_argument_group('dataset', 'parameters for dataset config')
-    data_parser.add_argument('--dataset', type=str, default='mnist',
-                             help='choose from bmnist, mnist, svhn, cifar, celeba32, celeba64, celeba128')
+    parser.add_argument('--dataset', type=str, default='mnist',
+                        help='choose from bmnist, mnist, svhn, cifar, celeba32, celeba64, celeba128')
+    parser.add_argument('--model', type=str, default='VAE',
+                        help='choose from VAE, CONV-VAE, VQ-VAE')
+    parser.add_argument('--custom', action='store_true', help='enable custom config')
 
     model_parser = parser.add_argument_group('model', 'parameters for model config')
-    model_parser.add_argument('--model', type=str, default='VAE',
-                              help='choose from VAE, CONV-VAE, VQ-VAE')
-    model_parser.add_argument('--hidden_dim', type=int, default=2)
+    model_parser.add_argument('--latent_dim', type=int, default=2)
     model_parser.add_argument('--hidden_layers', type=int, default=5)
     model_parser.add_argument('--features', type=int, default=512)
     model_parser.add_argument('--down_sampling', type=int, default=2)
-    model_parser.add_argument('--output_type', type=str, default='fix_std',
+    model_parser.add_argument('--output_type', type=str, default='gauss',
                               help='the output mode for vae decoder, choose from fix_std, gauss, bernoulli')
     model_parser.add_argument('--use_mce', action='store_true', help='use Mento Carlo Estimation to compute kl divergence')
 
@@ -44,6 +44,15 @@ if __name__ == '__main__':
     log_parser.add_argument('--suffix', type=str, default=None, help='suffix in log folder and model file')
 
     args = parser.parse_args()
+
+    if not args.custom:
+        config = load_config(CONFIG)
+        try:
+            args = argparse.Namespace(**(config[args.model][args.dataset]))
+        except:
+            print("Warning: there is no default config for the combination of {} and {}, use custom config instead!".format(
+                args.model, args.dataset
+            ))
 
     assert not (args.dataset == 'bmnist') ^ (args.output_type == 'bernoulli'), 'bmnist can only use with bernoulli output type'
     

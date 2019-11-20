@@ -6,19 +6,19 @@ from torch.utils.tensorboard import SummaryWriter
 import os, argparse
 
 from models.flow import config_model, train_flow
-from models.utils import config_dataset, setup_seed, step_loader, select_gpus, nats2bits
+from models.utils import config_dataset, setup_seed, step_loader, select_gpus, nats2bits, load_config
 
-from models.flow import LOGDIR, MODELDIR, VERSION
+from models.flow import LOGDIR, MODELDIR, VERSION, CONFIG
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    data_parser = parser.add_argument_group('dataset', 'parameters for dataset config')
-    data_parser.add_argument('--dataset', type=str, default='cifar',
-                             help='choose from mnist, svhn, cifar, celeba')
+    parser.add_argument('--dataset', type=str, default='mnist',
+                        help='choose from bmnist, mnist, svhn, cifar, celeba32, celeba64, celeba128')
+    parser.add_argument('--model', type=str, default='NICE',
+                        help='choose from NICE, RealNVP, Glow')
+    parser.add_argument('--custom', action='store_true', help='enable custom config')
 
     model_parser = parser.add_argument_group('model', 'parameters for model config')
-    model_parser.add_argument('--model', type=str, default='RealNVP',
-                              help='choose from NICE, RealNVP, Glow')
     model_parser.add_argument('--blocks', type=int, default=8)
     model_parser.add_argument('--features', type=int, default=256)
     model_parser.add_argument('--bits', type=int, default=8, help='bits per dimension in the dataset')
@@ -47,7 +47,14 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    workers = min(args.workers, os.cpu_count()) # compute actual workers in use
+    if not args.custom:
+        config = load_config(CONFIG)
+        try:
+            args = argparse.Namespace(**(config[args.model][args.dataset]))
+        except:
+            print("Warning: there is no default config for the combination of {} and {}, use custom config instead!".format(
+                args.model, args.dataset
+            ))
     
     # config gpu
     select_gpus(args.gpu) 

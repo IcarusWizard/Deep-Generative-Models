@@ -6,4 +6,5 @@ from .train_utils import config_model, train_flow
 
 LOGDIR = 'logs/flow/'
 MODELDIR = 'checkpoints/flow/'
+CONFIG = 'config/flow.json'
 VERSION = '0.1'
