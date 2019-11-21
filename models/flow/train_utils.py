@@ -21,6 +21,7 @@ def config_model(args, model_param):
     elif args.model == 'RealNVP':
         model_param.update({
             "hidden_blocks" : args.blocks,
+            "down_sampling" : args.down_sampling,
         })
         model = RealNVP2D(**model_param)
     elif args.model == 'Glow':
@@ -36,24 +37,35 @@ def config_model(args, model_param):
 
     return model, model_param
 
-def train_flow(model, optim, optim_schedule, writer, train_loader, val_loader, test_loader, args):
+def train_flow(model,  writer, train_loader, val_loader, test_loader, args):
     device = next(model.parameters()).device
 
-    # Initialize ActNorm
-    init_loader = torch.utils.data.DataLoader(train_loader.dataset, batch_size=args.actnorm_batch_size, shuffle=True)
-    init_data = next(iter(init_loader))[0].to(device)
-    with torch.no_grad():
-        model(init_data)
-        dim = np.prod(init_data.shape[1:])
-    del init_data, init_loader
-    print('ActNorm Initialize complete!')
+    # config optimizer
+    if args.model == 'RealNVP':
+        optim = torch.optim.Adam([
+            {'params' : [parameter[1] for parameter in model.named_parameters() if not 'scale' in parameter[0]]},
+            {'params' : [parameter[1] for parameter in model.named_parameters() if 'scale' in parameter[0]], 'weight_decay' : 5e-5}
+        ], lr=args.lr, betas=(args.beta1, args.beta2))
+    else:
+        optim = torch.optim.Adam(model.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
+
+    if args.model == 'Glow':
+        schedule = lambda step: min(step / args.warmup_steps, 1.0)
+        optim_schedule = torch.optim.lr_scheduler.LambdaLR(optim, schedule)
+        # Initialize ActNorm
+        init_loader = torch.utils.data.DataLoader(train_loader.dataset, batch_size=args.actnorm_batch_size, shuffle=True)
+        init_data = next(iter(init_loader))[0].to(device)
+        with torch.no_grad():
+            model(init_data)
+        del init_data, init_loader
+        print('ActNorm Initialize complete!')
 
     step = 0
 
     with tqdm(total=args.steps) as timer:
         for batch in step_loader(train_loader):
             batch = batch[0].to(device)
-
+            
             _, loss = model(batch)
 
             # temporal solution: discard bad batch
@@ -62,13 +74,15 @@ def train_flow(model, optim, optim_schedule, writer, train_loader, val_loader, t
                 optim.zero_grad()
                 print("bad batch, skip")
                 continue
-
-            optim_schedule.step()
+            
+            if args.model == 'Glow':
+                optim_schedule.step()
             optim.zero_grad()
             loss.backward()
             optim.step()
 
             if step % args.log_step == 0:
+                dim = np.prod(batch.shape[1:])
                 with torch.no_grad():
                     val_loss = test_flow(model, val_loader)
 
@@ -79,7 +93,7 @@ def train_flow(model, optim, optim_schedule, writer, train_loader, val_loader, t
 
                     writer.add_scalars('NLL', {'train' : nats2bits(loss.item()) / dim, 
                                                 'val' : nats2bits(val_loss.item()) / dim}, global_step=step)
-                    imgs = torch.clamp(model.sample(128), 0, 1)
+                    imgs = torch.clamp(model.sample(64), 0, 1)
                     writer.add_images('samples', imgs, global_step=step)
 
             step = step + 1

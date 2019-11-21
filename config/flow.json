@@ -62,5 +62,70 @@
             "log_step" : 500,
             "suffix" : null
         }
+    },
+
+    "RealNVP" : {
+        "cifar" : {
+            "dataset" : "cifar",
+            "model" : "RealNVP",
+            "custom" : false,
+            "blocks" : 8,
+            "features" : 64,
+            "down_sampling" : 1,
+            "bits" : 8,
+            "seed" : null,
+            "batch_size" : 64,
+            "gpu" : "0",
+            "workers" : 4,
+            "steps" : 50000,
+            "warmup_steps" : 1,
+            "lr" : 1e-3,
+            "beta1" : 0.9,
+            "beta2" : 0.99,
+            "log_step" : 500,
+            "suffix" : null            
+        },
+
+        "celeba32" : {
+            "dataset" : "celeba32",
+            "model" : "RealNVP",
+            "custom" : false,
+            "blocks" : 4,
+            "features" : 32,
+            "down_sampling" : 3,
+            "bits" : 8,
+            "seed" : null,
+            "batch_size" : 64,
+            "gpu" : "1",
+            "workers" : 8,
+            "steps" : 50000,
+            "warmup_steps" : 1,
+            "lr" : 1e-3,
+            "beta1" : 0.9,
+            "beta2" : 0.99,
+            "log_step" : 500,
+            "suffix" : null            
+        },
+
+        "celeba64" : {
+            "dataset" : "celeba64",
+            "model" : "RealNVP",
+            "custom" : false,
+            "blocks" : 2,
+            "features" : 32,
+            "down_sampling" : 4,
+            "bits" : 8,
+            "seed" : null,
+            "batch_size" : 64,
+            "gpu" : "2",
+            "workers" : 8,
+            "steps" : 50000,
+            "warmup_steps" : 1,
+            "lr" : 1e-3,
+            "beta1" : 0.9,
+            "beta2" : 0.99,
+            "log_step" : 500,
+            "suffix" : null            
+        }
     }
 }

@@ -6,11 +6,10 @@ import matplotlib.pyplot as plt
 import pickle, torch, math, random, os
 import PIL.Image as Image
 
-from .utils import build_chessboard_mask, build_channel_mask, LOG2PI
+from .utils import build_chessboard_mask, build_channel_mask, LOG2PI, unsqueeze, squeeze
 from ..modules import Flatten, Unflatten, MLP, ResBlock, ResNet
 
 # ------------------------- NICE ------------------------- #
-
 class Reshape(torch.nn.Module):
     def __init__(self, c, h, w):
         super().__init__()
@@ -63,7 +62,286 @@ class CoupleSigmoid(torch.nn.Module):
         return torch.log(z) - torch.log(1 - z)
 
 # ------------------------- RealNVP ------------------------- #
+class Dequantization(torch.nn.Module):
+    """
+        Modified from https://github.com/fmu2/realNVP/blob/master/data_utils.py
+    """
+    def __init__(self, constraint=0.9, bits=8):
+        super(Dequantization, self).__init__()
+        self.constraint = constraint
+        self.scale = 2 ** bits
 
+    def forward(self, x):
+        B, C, H, W = x.shape
+        
+        # dequantization
+        noise = torch.rand(*x.shape, device=x.device)
+        x = (x * (self.scale - 1) + noise) / self.scale
+        
+        # restrict data
+        x *= 2.
+        x -= 1.
+        x *= self.constraint
+        x += 1.
+        x /= 2.
+
+        # logit data
+        logit_x = torch.log(x) - torch.log(1. - x)
+
+        # log-determinant of Jacobian from the transform
+        pre_logit_scale = torch.tensor(
+            np.log(self.constraint) - np.log(1. - self.constraint))
+        log_diag_J = F.softplus(logit_x) + F.softplus(-logit_x) \
+            - F.softplus(-pre_logit_scale) + np.log((self.scale - 1) / self.scale)
+
+        return logit_x, torch.sum(log_diag_J, dim=(1, 2, 3))
+
+    def backward(self, z):
+        x = 1. / (torch.exp(-z) + 1.) # reverse logit
+        x *= 2. 
+        x -= 1. 
+        x /= self.constraint
+        x += 1.
+        x /= 2.
+        return x
+
+# class RealNVP_BatchNorm2D(torch.nn.Module):
+#     def __init__(self, features, pho=0.9, eps=0.5):
+#         super().__init__()
+#         self.features = features
+#         self.pho = pho
+#         self.eps = eps
+
+#         self.register_buffer('running_mean', torch.zeros(features))
+#         self.register_buffer('running_var', torch.zeros(features))
+#         self.register_buffer('num_batches_tracked', torch.tensor(0, dtype=torch.long))
+    
+#     def forward(self, x):
+#         if self.training:
+#             self.num_batches_tracked += 1
+#             used_mean, used_var = torch.var_mean(x, dim=(0, 2, 3))
+#             cur_mean, cur_var = used_mean, used_var
+
+#             new_mean = self.pho + self.running_mean + (1 - self.pho) * used_mean
+#             new_var = self.pho * self.running_var + (1 - self.pho) * used_var
+
+#             with torch.no_grad():
+#                 self.running_mean.set_(new_mean)
+#                 self.running_var.set_(new_var)
+
+#             out_mean = new_mean / (1 - self.pho ** self.num_batches_tracked)
+#             out_var = new_var / (1 - self.pho ** self.num_batches_tracked)
+
+#         else:
+#             used_mean, used_var = self.mean, self.var
+#             cur_mean, cur_var = used_mean, used_var
+
+#         return (x - out_mean.view(1, -1, 1, 1)) / torch.sqrt((out_var + self.eps)).view(1, -1, 1, 1), used_mean, out_var
+
+class RealNVPResBlock(torch.nn.Module):
+    def __init__(self, features):
+        super(RealNVPResBlock, self).__init__()
+        self.shortcut = torch.nn.Sequential(
+            torch.nn.BatchNorm2d(features),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.utils.weight_norm(torch.nn.Conv2d(features, features, 3, stride=1, padding=1)),
+            torch.nn.BatchNorm2d(features),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.utils.weight_norm(torch.nn.Conv2d(features, features, 3, stride=1, padding=1)),
+        )
+
+    def forward(self, x):
+        return x + self.shortcut(x)
+
+class RealNVPResNet(torch.nn.Module):
+    def __init__(self, in_channels, out_channels, features=32, number_blocks=4):
+        super(RealNVPResNet, self).__init__()
+        self.in_conv = torch.nn.Sequential(
+            torch.nn.BatchNorm2d(in_channels),
+            torch.nn.ReLU(inplace=True),            
+            torch.nn.Conv2d(in_channels, features, 3, stride=1, padding=1),
+        )
+
+        self.res_blocks = torch.nn.ModuleList([RealNVPResBlock(features) for _ in range(number_blocks)])
+        
+        self.out_conv = torch.nn.Sequential(
+            torch.nn.BatchNorm2d(features),
+            torch.nn.ReLU(inplace=True),            
+            torch.nn.Conv2d(features, out_channels, 1, stride=1, padding=0),
+        )
+
+    def forward(self, x):
+        h = self.in_conv(x)
+        for block in self.res_blocks:
+            h = block(h)
+        return self.out_conv(h)
+
+class CoupleLayers1D(torch.nn.Module):
+    def __init__(self, features, hidden_features, hidden_layers, mask_type):
+        super(CoupleLayers1D, self).__init__()
+
+        mask = np.ones((1, features))
+        if mask_type == 0:
+            mask[0, features // 2 :] = 0
+        else:
+            mask[0, : features // 2] = 0
+        
+        mask = torch.from_numpy(mask).float()
+        self.register_buffer('mask', mask)
+
+        self.scale = torch.nn.Parameter(torch.tensor(0.0, dtype=torch.float))
+        self.shift = torch.nn.Parameter(torch.tensor(0.0, dtype=torch.float))
+        self.out_bn = torch.nn.BatchNorm1d(features, affine=False)
+
+        self.nn = MLP(features, features * 2, hidden_features, hidden_layers)
+
+    def forward(self, x):
+        logs, t = torch.chunk(self.nn(x * self.mask), 2, dim=1)
+        logs = torch.tanh(logs) * self.scale + self.shift
+        z = x * self.mask + (1 - self.mask) * (x * torch.exp(logs) + t)
+
+        if self.training:
+            var = torch.var(z, dim=(0), keepdim=True)
+        else:
+            var = self.out_bn.running_var.view(1, -1)
+
+        z = self.out_bn(z) * (1 - self.mask) + z * self.mask
+
+        logdet = torch.sum((logs - 0.5 * torch.log(var + self.out_bn.eps)) * (1 - self.mask), dim=1)
+
+        return z, logdet
+
+    def backward(self, z):
+        mean, var, eps = self.out_bn.running_mean, self.out_bn.running_var, self.out_bn.eps
+        z = z * torch.sqrt(var + eps).view(1, -1) + mean.view(1, -1)
+
+        logs, t = torch.chunk(self.nn(z * self.mask), 2, dim=1)
+        logs = torch.tanh(logs) * self.scale + self.shift
+        x = z * self.mask + (1 - self.mask) * (z - t) * torch.exp(- logs)
+
+        return x
+
+class CoupleLayer2D(torch.nn.Module):
+    def __init__(self, in_channels, features=32, number_blocks=4):
+        super(CoupleLayer2D, self).__init__()
+
+        self.res = RealNVPResNet(in_channels, 2 * in_channels, features, number_blocks)
+        self.scale = torch.nn.Parameter(torch.tensor(0.0, dtype=torch.float))
+        self.shift = torch.nn.Parameter(torch.tensor(0.0, dtype=torch.float))
+        self.out_bn = torch.nn.BatchNorm2d(in_channels, affine=False)
+        self.build_mask()
+        
+    def forward(self, x):
+        logs, t = torch.chunk(self.res(x * self.mask), 2, dim=1)
+        logs = torch.tanh(logs) * self.scale + self.shift
+
+        logs = logs * (1 - self.mask)
+        t = t * (1 - self.mask)
+
+        z = x * torch.exp(logs) + t
+
+        if self.training:
+            var = torch.var(z, dim=(0, 2, 3)).view(1, -1, 1, 1)
+        else:
+            var = self.out_bn.running_var.view(1, -1, 1, 1)
+
+        z = self.out_bn(z) * (1 - self.mask) + z * self.mask
+
+        logdet = torch.sum(logs - 0.5 * torch.log(var + self.out_bn.eps) * (1 - self.mask), dim=(1, 2, 3))
+
+        return z, logdet
+
+    def backward(self, z):
+        mean, var, eps = self.out_bn.running_mean, self.out_bn.running_var, self.out_bn.eps
+        z = z * torch.exp(0.5 * torch.log(var.view(1, -1, 1, 1) + eps) * (1. - self.mask)) + mean.view(1, -1, 1, 1) * (1. - self.mask)
+
+        logs, t = torch.chunk(self.res(z * self.mask), 2, dim=1)
+        logs = torch.tanh(logs) * self.scale + self.shift
+        x = z * self.mask + (1 - self.mask) * (z - t) * torch.exp(- logs)
+
+        return x
+
+    def build_mask(self):
+        """
+            This function need to set self.mask to the correct couple mask
+        """
+        raise NotImplementedError
+
+class ChessboardCoupleLayer(CoupleLayer2D):
+    def __init__(self, in_channels, h, w, inverse=False, features=32, number_blocks=4):
+        self.inverse = inverse
+        self.h = h
+        self.w = w
+        super(ChessboardCoupleLayer, self).__init__(in_channels, features, number_blocks)
+
+    def build_mask(self):
+        mask = build_chessboard_mask(self.h, self.w)
+        if self.inverse:
+            mask = 1 - mask
+        mask = torch.from_numpy(mask).float().view(1, 1, self.h, self.w)
+        self.register_buffer('mask', mask)
+
+class ChannelCoupleLayer(CoupleLayer2D):
+    def __init__(self, in_channels, inverse=False, features=32, number_blocks=4):
+        self.inverse = inverse
+        self.in_channels = in_channels
+        super(ChannelCoupleLayer, self).__init__(in_channels, features, number_blocks)
+
+    def build_mask(self):
+        mask = build_channel_mask(self.in_channels)
+        if self.inverse:
+            mask = 1 - mask
+        mask = torch.from_numpy(mask).float().view(1, self.in_channels, 1, 1)
+        self.register_buffer('mask', mask)
+
+class MultiLayerBlock(torch.nn.Module):
+    def __init__(self, c, h, w, features=32, number_blocks=4):
+        super().__init__()
+
+        self.chessboard_list = torch.nn.ModuleList([
+            ChessboardCoupleLayer(c, h, w, i % 2, features, number_blocks) for i in range(3)
+        ])
+        
+        h = h // 2
+        w = w // 2
+        c = c * 2
+
+        self.channel_list = torch.nn.ModuleList([
+            ChannelCoupleLayer(c, i % 2, features, number_blocks) for i in range(3)
+        ])
+
+    def forward(self, x):
+        z = x
+        logdet = 0
+
+        for coupling in self.chessboard_list:
+            z, _logdet = coupling(z)
+            logdet = logdet + _logdet
+
+        z = squeeze(z)
+        z, final_z = torch.chunk(z, 2, dim=1)
+
+        for coupling in self.channel_list:
+            z, _logdet = coupling(z)
+            logdet = logdet + _logdet
+
+        return z, final_z, logdet
+
+    def backward(self, z, final_z):
+        x = z
+
+        for coupling in reversed(self.channel_list):
+            x = coupling.backward(x)
+
+        x = torch.cat([x, final_z.view(*x.shape)], dim=1)
+        x = unsqueeze(x)
+
+        for coupling in reversed(self.chessboard_list):
+            x = coupling.backward(x)
+
+        return x        
+
+# ------------------------- Glow ------------------------- #
 class ActNorm1D(torch.nn.Module):
     def __init__(self, features):
         super(ActNorm1D, self).__init__()
@@ -125,185 +403,6 @@ class ActNorm2D(torch.nn.Module):
         scale = torch.exp(self.weight)
 
         return (z - self.bias.view(1, -1, 1, 1)) * scale.view(1, -1, 1, 1).reciprocal()
-
-class Dequantization(torch.nn.Module):
-    """
-        Modified from https://github.com/fmu2/realNVP/blob/master/data_utils.py
-    """
-    def __init__(self, constraint=0.9, bits=2):
-        super(Dequantization, self).__init__()
-        self.constraint = constraint
-        self.scale = 2 ** bits
-
-    def forward(self, x):
-        B, C, H, W = x.shape
-        
-        # dequantization
-        noise = torch.rand(*x.shape, device=x.device)
-        x = (x * (self.scale - 1) + noise) / self.scale
-        
-        # restrict data
-        x *= 2.
-        x -= 1.
-        x *= self.constraint
-        x += 1.
-        x /= 2.
-
-        # logit data
-        logit_x = torch.log(x) - torch.log(1. - x)
-
-        # log-determinant of Jacobian from the transform
-        pre_logit_scale = torch.tensor(
-            np.log(self.constraint) - np.log(1. - self.constraint))
-        log_diag_J = F.softplus(logit_x) + F.softplus(-logit_x) \
-            - F.softplus(-pre_logit_scale) + np.log((self.scale - 1) / self.scale)
-
-        return logit_x, torch.sum(log_diag_J, dim=(1, 2, 3))
-
-    def backward(self, z):
-        x = 1. / (torch.exp(-z) + 1.)
-        x *= 2. 
-        x -= 1. 
-        x /= self.constraint
-        x += 1.
-        x /= 2.
-        return x
-
-class CoupleLayers1D(torch.nn.Module):
-    def __init__(self, features, hidden_features, hidden_layers, mask_type):
-        super(CoupleLayers1D, self).__init__()
-
-        mask = np.ones((1, features))
-        if mask_type == 0:
-            mask[0, features // 2 :] = 0
-        else:
-            mask[0, : features // 2] = 0
-        
-        mask = torch.from_numpy(mask).float()
-        self.register_buffer('mask', mask)
-
-        self.nn = MLP(features, features * 2, hidden_features, hidden_layers)
-
-    def forward(self, x):
-        logs, t = torch.chunk(self.nn(x * self.mask), 2, dim=1)
-        z = x * self.mask + (1 - self.mask) * (x * torch.exp(logs) + t)
-
-        return z, torch.sum(logs * (1 - self.mask), dim=1)
-
-    def backward(self, z):
-        logs, t = torch.chunk(self.nn(z * self.mask), 2, dim=1)
-        x = z * self.mask + (1 - self.mask) * (z - t) * torch.exp(- logs)
-
-        return x
-
-class CoupleBlock1D(torch.nn.Module):
-    def __init__(self, features, hidden_features, hidden_layers, mask_type):
-        assert features % 2 == 0
-        super(CoupleBlock1D, self).__init__()
-
-        self.norm = ActNorm1D(features)
-        self.couple = CoupleLayers1D(features, hidden_features, hidden_layers, mask_type)
-
-    def forward(self, x):
-        out, norm_logdet = self.norm(x)
-
-        out, couple_logdet = self.couple(out)
-
-        return out, couple_logdet + norm_logdet        
-
-    def backward(self, z):
-        out = self.couple.backward(z)
-        return self.norm.backward(out)
-
-class CoupleLayer2D(torch.nn.Module):
-    def __init__(self, in_channels, features=256, number_blocks=8):
-        super(CoupleLayer2D, self).__init__()
-
-        self.res = ResNet(in_channels, 2 * in_channels, features, number_blocks, zero_init=True)
-        self.build_mask()
-        
-    def forward(self, x):
-        logs, t = torch.chunk(self.res(x * self.mask), 2, dim=1)
-        z = x * self.mask + (1 - self.mask) * (x * torch.exp(logs) + t)
-
-        return z, torch.sum(logs * (1 - self.mask), dim=(1, 2, 3))
-
-    def backward(self, z):
-        logs, t = torch.chunk(self.res(z * self.mask), 2, dim=1)
-        x = z * self.mask + (1 - self.mask) * (z - t) * torch.exp(- logs)
-
-        return x
-
-    def build_mask(self):
-        """
-            This function need to set self.mask to the correct couple mask
-        """
-        raise NotImplementedError
-
-class ChessboardCoupleLayer(CoupleLayer2D):
-    def __init__(self, in_channels, h, w, inverse=False, features=256, number_blocks=8):
-        self.inverse = inverse
-        self.h = h
-        self.w = w
-        super(ChessboardCoupleLayer, self).__init__(in_channels, features, number_blocks)
-
-    def build_mask(self):
-        mask = build_chessboard_mask(self.h, self.w)
-        if self.inverse:
-            mask = 1 - mask
-        mask = torch.from_numpy(mask).float().view(1, 1, self.h, self.w)
-        self.register_buffer('mask', mask)
-
-class ChessboardCoupleBlock(torch.nn.Module):
-    def __init__(self, in_channels, h, w, inverse=False, features=256, number_blocks=8):
-        super(ChessboardCoupleBlock, self).__init__()
-        
-        self.norm = ActNorm2D(in_channels)
-        self.couple = ChessboardCoupleLayer(in_channels, h, w, inverse, features, number_blocks)
-
-    def forward(self, x):
-        out, norm_logdet = self.norm(x)
-
-        out, couple_logdet = self.couple(out)
-
-        return out, couple_logdet + norm_logdet        
-
-    def backward(self, z):
-        out = self.couple.backward(z)
-        return self.norm.backward(out)
-
-class ChannelCoupleLayer(CoupleLayer2D):
-    def __init__(self, in_channels, inverse=False, features=256, number_blocks=8):
-        self.inverse = inverse
-        self.in_channels = in_channels
-        super(ChannelCoupleLayer, self).__init__(in_channels, features, number_blocks)
-
-    def build_mask(self):
-        mask = build_channel_mask(self.in_channels)
-        if self.inverse:
-            mask = 1 - mask
-        mask = torch.from_numpy(mask).float().view(1, self.in_channels, 1, 1)
-        self.register_buffer('mask', mask)
-
-class ChannelCoupleBlock(torch.nn.Module):
-    def __init__(self, in_channels, inverse=False, features=256, number_blocks=8):
-        super(ChannelCoupleBlock, self).__init__()
-        
-        self.norm = ActNorm2D(in_channels)
-        self.couple = ChannelCoupleLayer(in_channels, inverse, features, number_blocks)
-
-    def forward(self, x):
-        out, norm_logdet = self.norm(x)
-
-        out, couple_logdet = self.couple(out)
-
-        return out, couple_logdet + norm_logdet        
-
-    def backward(self, z):
-        out = self.couple.backward(z)
-        return self.norm.backward(out)
-
-# ------------------------- Glow ------------------------- #
 
 class SimpleConv(torch.nn.Module):
     def __init__(self, in_channels, out_channels, features=512, zero_init=True):

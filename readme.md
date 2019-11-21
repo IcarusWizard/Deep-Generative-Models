@@ -16,7 +16,7 @@ This repertory is in progressing, feel free to raise an issue if you find any bu
   * [ ] [PixelSNAIL](http://arxiv.org/abs/1712.09763)
 * FLOW
   - [x] [NICE](https://arxiv.org/abs/1410.8516)
-  - [ ] [RealNVP](http://arxiv.org/abs/1605.08803) (Additive in progress)
+  - [x] [RealNVP](http://arxiv.org/abs/1605.08803)
   - [x] [Glow](http://arxiv.org/abs/1807.03039)
 * VAE
   * [x] [Vanilla VAE](http://arxiv.org/abs/1312.6114)

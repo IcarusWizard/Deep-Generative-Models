@@ -19,8 +19,9 @@ if __name__ == '__main__':
     parser.add_argument('--custom', action='store_true', help='enable custom config')
 
     model_parser = parser.add_argument_group('model', 'parameters for model config')
-    model_parser.add_argument('--blocks', type=int, default=8)
-    model_parser.add_argument('--features', type=int, default=256)
+    model_parser.add_argument('--blocks', type=int, default=4)
+    model_parser.add_argument('--features', type=int, default=32)
+    model_parser.add_argument('--down_sampling', type=int, default=3)
     model_parser.add_argument('--bits', type=int, default=8, help='bits per dimension in the dataset')
     model_parser.add_argument('--coupling', type=str, default='affine', help='choose from affine and additive')
     model_parser.add_argument('--actnorm_batch_size', type=int, default=128, help='batch size for initializing ActNorm')
@@ -78,15 +79,11 @@ if __name__ == '__main__':
     
     model = model.to(device)
 
-    # config optimizer
-    optim = torch.optim.Adam(model.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
-    schedule = lambda step: min(step / args.warmup_steps, 1.0)
-    opt_schedule = torch.optim.lr_scheduler.LambdaLR(optim, schedule)
-
+    # open writer
     writer = SummaryWriter(LOGDIR + '{}'.format(filenames['log_name']))
 
     # train model
-    model, test_loss = train_flow(model, optim, opt_schedule, writer, train_loader, val_loader, test_loader, args)
+    model, optim, test_loss = train_flow(model, writer, train_loader, val_loader, test_loader, args)
 
     dim = model_param['c'] * model_param['h'] * model_param['w']
     torch.save({
