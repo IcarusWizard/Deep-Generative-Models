@@ -65,7 +65,7 @@ def train_vae(model, optim, writer, train_loader, val_loader, test_loader, args)
                                                         'val' : nats2bits(val_kl.item())}, global_step=step)
                 writer.add_scalars('Reconstruction loss', {'train' : nats2bits(reconstruction_loss.item()), 
                                                             'val' : nats2bits(val_reconstruction_loss.item())}, global_step=step)
-                imgs = torch.clamp(model.sample(128, deterministic=True), 0, 1)
+                imgs = torch.clamp(model.sample(64, deterministic=True), 0, 1)
                 writer.add_images('samples', imgs, global_step=step)
 
             step = step + 1
