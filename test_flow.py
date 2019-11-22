@@ -13,9 +13,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, help='file name of the stored model')
     parser.add_argument('--mode', type=str, default='generation',
-                        help='test mode, select from generation and interpolation')
+                        help='test mode, select from generation, interpolation, extrapolation')
     parser.add_argument('--temperature', type=float, default=1.0,
                         help='temperature used for generation')
+    parser.add_argument('--scale', type=int, default=2,
+                        help='times of scale multiplication, choose from 2, 4, 8')
     parser.add_argument('--gpu', type=str, default='0')
 
     args = parser.parse_args()
@@ -36,14 +38,23 @@ if __name__ == '__main__':
     _, _, train_loader, _, _ = config_dataset(train_time_args, 2)
     
     if train_time_args.model == 'NICE':
+        assert not args.mode == 'extrapolation', 'NICE do not support mode extrapolation'
         model = NICE(**checkpoint['model_parameters'])
     elif train_time_args.model == 'RealNVP':
+        checkpoint['model_parameters']['h'] *= args.scale
+        checkpoint['model_parameters']['w'] *= args.scale
         model = RealNVP2D(**checkpoint['model_parameters'])
     elif train_time_args.model == 'Glow':
+        checkpoint['model_parameters']['h'] *= args.scale
+        checkpoint['model_parameters']['w'] *= args.scale
         model = GLOW(**checkpoint['model_parameters'])
     else:
         raise ValueError('Model {} is not supported!'.format(train_time_args.model))
 
+    state_dict = checkpoint['model_state_dict']
+    model_state_dick = model.state_dict()
+    for k in list(state_dict.keys()):
+        if 'mask' in k: state_dict[k] = model_state_dick[k]
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
     
@@ -51,18 +62,38 @@ if __name__ == '__main__':
 
     if args.mode == 'generation':
         with torch.no_grad():
-            imgs = torch.clamp(model.sample(100, temperature=args.temperature), 0, 1)
+            imgs = torch.clamp(model.sample(64, temperature=args.temperature), 0, 1)
             imgs = imgs.cpu().permute(0, 2, 3, 1).numpy()
 
         if imgs.shape[3] == 1:
             imgs = imgs[:, :, :, 0]
-        fig, axes = plt.subplots(10, 10, figsize=(10, 10))
+        fig, axes = plt.subplots(8, 8, figsize=(8, 8))
         plt.subplots_adjust(wspace=0.01, hspace=0.01)
-        for i in range(10):
-            for j in range(10):
-                axes[i, j].imshow(imgs[i*10+j])
+        for i in range(8):
+            for j in range(8):
+                axes[i, j].imshow(imgs[i*8+j])
                 axes[i, j].axis('off')
         plt.show()
+
+    elif args.mode == 'extrapolation':
+        size = 8 // args.scale
+        with torch.no_grad():
+            imgs = torch.clamp(model.sample(size ** 2, temperature=args.temperature), 0, 1)
+            imgs = imgs.cpu().permute(0, 2, 3, 1).numpy()
+
+        if imgs.shape[3] == 1:
+            imgs = imgs[:, :, :, 0]
+        fig, axes = plt.subplots(size, size, figsize=(8, 8))
+        plt.subplots_adjust(wspace=0.01, hspace=0.01)
+        if size == 1:
+            axes.imshow(imgs[0])
+            axes.axis('off')
+        else:            
+            for i in range(size):
+                for j in range(size):
+                    axes[i, j].imshow(imgs[i*size+j])
+                    axes[i, j].axis('off')
+        plt.show()        
 
     elif args.mode == 'interpolation':
         step = 0
