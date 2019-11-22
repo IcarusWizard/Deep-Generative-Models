@@ -41,12 +41,14 @@ if __name__ == '__main__':
         assert not args.mode == 'extrapolation', 'NICE do not support mode extrapolation'
         model = NICE(**checkpoint['model_parameters'])
     elif train_time_args.model == 'RealNVP':
-        checkpoint['model_parameters']['h'] *= args.scale
-        checkpoint['model_parameters']['w'] *= args.scale
+        if args.mode == 'extrapolation':
+            checkpoint['model_parameters']['h'] *= args.scale
+            checkpoint['model_parameters']['w'] *= args.scale
         model = RealNVP2D(**checkpoint['model_parameters'])
     elif train_time_args.model == 'Glow':
-        checkpoint['model_parameters']['h'] *= args.scale
-        checkpoint['model_parameters']['w'] *= args.scale
+        if args.mode == 'extrapolation':
+            checkpoint['model_parameters']['h'] *= args.scale
+            checkpoint['model_parameters']['w'] *= args.scale
         model = GLOW(**checkpoint['model_parameters'])
     else:
         raise ValueError('Model {} is not supported!'.format(train_time_args.model))
