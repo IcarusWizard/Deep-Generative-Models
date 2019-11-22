@@ -45,6 +45,7 @@ if __name__ == '__main__':
     log_parser = parser.add_argument_group('log', "parameters for log config")
     log_parser.add_argument('--log_step', type=int, default=500)
     log_parser.add_argument('--suffix', type=str, default=None, help='suffix in log folder and model file')
+    # log_parser.add_argument('--temperature', type=float, default=1.0, help='temperature used for image generation')
 
     args = parser.parse_args()
 

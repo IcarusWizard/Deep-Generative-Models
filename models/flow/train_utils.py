@@ -106,7 +106,7 @@ def train_flow(model,  writer, train_loader, val_loader, test_loader, args):
 
     print('In test set, NLL is {0:{1}} bits / dim'.format(nats2bits(test_loss.item()) / dim, '.3f'))
 
-    return model, test_loss
+    return model, optim, test_loss
 
 def test_flow(model, loader):
     device = next(model.parameters()).device
