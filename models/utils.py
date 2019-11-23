@@ -72,9 +72,10 @@ def config_dataset(args, batch_size=None):
             "model_name" : "{}_BMNIST".format(args.model),
         }
 
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
-        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=250)
-        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=250)
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, 
+            shuffle=True, num_workers=workers, pin_memory=True)
+        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=250, num_workers=workers, pin_memory=True)
+        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=250, num_workers=workers, pin_memory=True)
 
         model_param = {
             "c" : 1,
@@ -90,9 +91,10 @@ def config_dataset(args, batch_size=None):
             "model_name" : "{}_MNIST".format(args.model),
         }
 
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
-        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=250)
-        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=250)
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, 
+            shuffle=True, num_workers=workers, pin_memory=True)
+        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=250, num_workers=workers, pin_memory=True)
+        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=250, num_workers=workers, pin_memory=True)
 
         model_param = {
             "c" : 1,
@@ -103,9 +105,10 @@ def config_dataset(args, batch_size=None):
     elif args.dataset == 'svhn':
         train_dataset, val_dataset, test_dataset = load_svhn()
 
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
-        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=250)
-        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=250)
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, 
+            shuffle=True, num_workers=workers, pin_memory=True)
+        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=250, num_workers=workers, pin_memory=True)
+        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=250, num_workers=workers, pin_memory=True)
 
         filenames = {
             "log_name" : "{}_SVHN".format(args.model),
@@ -121,9 +124,10 @@ def config_dataset(args, batch_size=None):
     elif args.dataset == 'cifar':
         train_dataset, val_dataset, test_dataset = load_cifar()
 
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
-        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=250)
-        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=250)
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, 
+            shuffle=True, num_workers=workers, pin_memory=True)
+        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=250, num_workers=workers, pin_memory=True)
+        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=250, num_workers=workers, pin_memory=True)
 
         filenames = {
             "log_name" : "{}_Cifar10".format(args.model),
@@ -139,9 +143,10 @@ def config_dataset(args, batch_size=None):
     elif args.dataset == 'celeba32':
         train_dataset, val_dataset, test_dataset = load_celeba(image_size=32)
 
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
-        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=250)
-        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=250)
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, 
+            shuffle=True, num_workers=workers, pin_memory=True)
+        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=250, num_workers=workers, pin_memory=True)
+        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=250, num_workers=workers, pin_memory=True)
 
         filenames = {
             "log_name" : "{}_CelebA32".format(args.model),
@@ -157,9 +162,10 @@ def config_dataset(args, batch_size=None):
     elif args.dataset == 'celeba64':
         train_dataset, val_dataset, test_dataset = load_celeba(image_size=64)
 
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
-        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=100)
-        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=100)
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, 
+            shuffle=True, num_workers=workers, pin_memory=True)
+        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=100, num_workers=workers, pin_memory=True)
+        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=100, num_workers=workers, pin_memory=True)
 
         filenames = {
             "log_name" : "{}_CelebA64".format(args.model),
@@ -175,9 +181,10 @@ def config_dataset(args, batch_size=None):
     elif args.dataset == 'celeba128':
         train_dataset, val_dataset, test_dataset = load_celeba(image_size=128)
 
-        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=workers)
-        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=100)
-        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=100)
+        train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, 
+            shuffle=True, num_workers=workers, pin_memory=True)
+        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=100, num_workers=workers, pin_memory=True)
+        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=100, num_workers=workers, pin_memory=True)
 
         filenames = {
             "log_name" : "{}_CelebA128".format(args.model),
