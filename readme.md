@@ -58,7 +58,7 @@ This repertory is in progressing, feel free to raise an issue if you find any bu
 Run `python train_<method>.py --dataset <dataset> --model <model>` to train in default configuration.
 You can run `python check_default_config.py <method>` to find the default configuration we provide, or just look inside `config` folder.  
 If you want to tune some parameters for yourself, pass `--custom` to the training script, run `python train_<method>.py -h` to see all the parameters that you can tune.  
-**Note:** All the default configurations are tested on a single RTX 2080Ti GPU with 11G memory, if you cannot run any default configuration, please consider reduce the batch size or features in config file or with a custom mode.
+**Note:** All the default configurations are tested on a single RTX 2080Ti GPU with 11G memory, if you cannot run some default configurations (i.e. Glow), please consider reduce the batch size or features in config file or with a custom mode.
 
 ### Test  
 Run `python test_<model>.py -h` for help.

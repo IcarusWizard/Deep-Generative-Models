@@ -493,7 +493,11 @@ class GlowAffineLayer2D(torch.nn.Module):
         
     def forward(self, x):
         x1, x2 = torch.chunk(x, 2, dim=1)
-        logs, t = torch.chunk(self.res(x2), 2, dim=1) # NOTE: logs > 88.8 can cause torch.exp(logs) to inf
+        logs, t = torch.chunk(self.res(x2), 2, dim=1) # NOTE: 
+        # NOTE: refer to https://github.com/openai/glow/blob/eaff2177693a5d84a1cf8ae19e8e0441715b82f8/model.py#L395
+        # Without constrain, logs > 88.8 can cause torch.exp(logs) to inf. Original implementation here use 
+        # scale = sigmoid(logs + 2), here we use scale = exp(tanh(logs)) to consist with other models
+        logs = torch.tanh(logs)
 
         z1 = x1 * torch.exp(logs) + t
         z = torch.cat([z1, x2], dim=1)
@@ -503,6 +507,7 @@ class GlowAffineLayer2D(torch.nn.Module):
     def backward(self, z):
         z1, z2 = torch.chunk(z, 2, dim=1)
         logs, t = torch.chunk(self.res(z2), 2, dim=1)
+        logs = torch.tanh(logs)
         
         x1 = (z1 - t) * torch.exp(- logs)
         x = torch.cat([x1, z2], dim=1)
