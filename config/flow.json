@@ -167,7 +167,7 @@
             "nolu" : false,
             "seed" : null,
             "batch_size" : 128,
-            "gpu" : "1",
+            "gpu" : "0",
             "workers" : 8,
             "steps" : 50000,
             "warmup_steps" : 10000,
