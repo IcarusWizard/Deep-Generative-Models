@@ -1,4 +1,4 @@
-
+from .train_utils import train_gan, config_model
 
 LOGDIR = 'logs/gan/'
 MODELDIR = 'checkpoints/gan/'
