@@ -16,7 +16,7 @@ class GAN(torch.nn.Module):
         self.generator = torch.nn.Sequential(
             MLP(latent_dim, self.input_size, generator_features, generator_hidden_layers),
             Unflatten(c, h, w),
-            torch.nn.Sigmoid(),
+            torch.nn.Tanh(),
         )
 
         self.discriminator = torch.nn.Sequential(

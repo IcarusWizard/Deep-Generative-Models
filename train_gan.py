@@ -72,7 +72,7 @@ if __name__ == '__main__':
         os.makedirs(MODELDIR)
 
     # config dataset
-    filenames, model_param, train_loader, _, _ = config_dataset(args) # only need train dataset for GAN
+    filenames, model_param, train_loader, _, _ = config_dataset(args, normalize=True) # only need train dataset for GAN
 
     # config model
     model, model_param = config_model(args, model_param)

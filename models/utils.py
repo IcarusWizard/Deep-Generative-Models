@@ -59,7 +59,7 @@ def load_config(filename):
         d = json.load(f)
     return d
 
-def config_dataset(args, batch_size=None):
+def config_dataset(args, batch_size=None, normalize=False):
     workers = min(args.workers, os.cpu_count()) # compute actual workers in use
     
     if batch_size is None:
@@ -85,7 +85,7 @@ def config_dataset(args, batch_size=None):
 
     elif args.dataset == 'mnist':
 
-        train_dataset, val_dataset, test_dataset = load_mnist()
+        train_dataset, val_dataset, test_dataset = load_mnist(normalize=normalize)
         filenames = {
             "log_name" : "{}_MNIST".format(args.model),
             "model_name" : "{}_MNIST".format(args.model),
@@ -103,7 +103,7 @@ def config_dataset(args, batch_size=None):
         }
 
     elif args.dataset == 'svhn':
-        train_dataset, val_dataset, test_dataset = load_svhn()
+        train_dataset, val_dataset, test_dataset = load_svhn(normalize=normalize)
 
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, 
             shuffle=True, num_workers=workers, pin_memory=True)
@@ -122,7 +122,7 @@ def config_dataset(args, batch_size=None):
         }
 
     elif args.dataset == 'cifar':
-        train_dataset, val_dataset, test_dataset = load_cifar()
+        train_dataset, val_dataset, test_dataset = load_cifar(normalize=normalize)
 
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, 
             shuffle=True, num_workers=workers, pin_memory=True)
@@ -141,7 +141,7 @@ def config_dataset(args, batch_size=None):
         }
 
     elif args.dataset == 'celeba32':
-        train_dataset, val_dataset, test_dataset = load_celeba(image_size=32)
+        train_dataset, val_dataset, test_dataset = load_celeba(image_size=32, normalize=normalize)
 
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, 
             shuffle=True, num_workers=workers, pin_memory=True)
@@ -160,7 +160,7 @@ def config_dataset(args, batch_size=None):
         }
 
     elif args.dataset == 'celeba64':
-        train_dataset, val_dataset, test_dataset = load_celeba(image_size=64)
+        train_dataset, val_dataset, test_dataset = load_celeba(image_size=64, normalize=normalize)
 
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, 
             shuffle=True, num_workers=workers, pin_memory=True)
@@ -179,7 +179,7 @@ def config_dataset(args, batch_size=None):
         }
 
     elif args.dataset == 'celeba128':
-        train_dataset, val_dataset, test_dataset = load_celeba(image_size=128)
+        train_dataset, val_dataset, test_dataset = load_celeba(image_size=128, normalize=normalize)
 
         train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, 
             shuffle=True, num_workers=workers, pin_memory=True)

@@ -1,4 +1,5 @@
 from .vanilla_gan import GAN
+from .dcgan import DCGAN
 
 import torch
 from tqdm import tqdm
@@ -14,7 +15,14 @@ def config_model(args, model_param):
             "generator_features" : args.generator_features,
             "generator_hidden_layers" : args.generator_hidden_layers,
         })
-        model = GAN(**model_param)        
+        model = GAN(**model_param)  
+    elif args.model == 'DCGAN':
+        model_param.update({
+            "latent_dim" : args.latent_dim,
+            "discriminator_features" : args.discriminator_features, 
+            "generator_features" : args.generator_features,
+        })              
+        model = DCGAN(**model_param)
     else:
         raise ValueError('Model {} is not supported!'.format(args.model))
 
@@ -61,10 +69,13 @@ def train_gan(model, writer, train_loader, args):
                 print('Discriminator loss is {0:{1}}'.format(discriminator_loss.item(), '.3f'))
                 print('Generator loss is {0:{1}}'.format(generator_loss.item(), '.3f'))
 
-
                 writer.add_scalars('loss', {'discriminator' :discriminator_loss.item(), 
                                             'generator' : generator_loss.item()}, global_step=step)
-                imgs = torch.clamp(model.z2x(z), 0, 1)
+
+                imgs = torch.clamp(model.z2x(z) / 2 + 0.5, 0, 1)
+                writer.add_images('fixed_samples', imgs, global_step=step)
+
+                imgs = torch.clamp(model.generate(64) / 2 + 0.5, 0, 1)
                 writer.add_images('samples', imgs, global_step=step)
 
             step = step + 1
