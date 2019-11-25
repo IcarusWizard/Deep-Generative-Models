@@ -21,7 +21,7 @@
             "discriminator_lr" : 1e-3,
             "discriminator_beta1" : 0.5,
             "discriminator_beta2" : 0.99,
-            "log_step" : 500,
+            "log_step" : 100,
             "suffix" : null
         },
 
@@ -46,7 +46,7 @@
             "discriminator_lr" : 1e-3,
             "discriminator_beta1" : 0.5,
             "discriminator_beta2" : 0.99,
-            "log_step" : 500,
+            "log_step" : 100,
             "suffix" : null
         },
 
@@ -71,7 +71,7 @@
             "discriminator_lr" : 1e-3,
             "discriminator_beta1" : 0.5,
             "discriminator_beta2" : 0.99,
-            "log_step" : 500,
+            "log_step" : 100,
             "suffix" : null
         },
 
@@ -96,7 +96,7 @@
             "discriminator_lr" : 1e-3,
             "discriminator_beta1" : 0.5,
             "discriminator_beta2" : 0.99,
-            "log_step" : 500,
+            "log_step" : 100,
             "suffix" : null
         }
     },

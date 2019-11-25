@@ -1,8 +1,7 @@
 import torch
 from torch.functional import F
 
-from ..modules import Flatten, Unflatten, MLP
-from .modules import MaxOut
+from .modules import MLPGenerator, MLPDiscriminator
 
 class GAN(torch.nn.Module):
     def __init__(self, c, h, w, latent_dim, 
@@ -13,18 +12,11 @@ class GAN(torch.nn.Module):
         self.input_size = c * h * w
         self.latent_dim = latent_dim
 
-        self.generator = torch.nn.Sequential(
-            MLP(latent_dim, self.input_size, generator_features, generator_hidden_layers),
-            Unflatten(c, h, w),
-            torch.nn.Tanh(),
-        )
+        self.criterion = torch.nn.BCEWithLogitsLoss()
 
-        self.discriminator = torch.nn.Sequential(
-            Flatten(),
-            MLP(self.input_size, 1, discriminator_features, 
-                discriminator_hidden_layers, lambda x: F.leaky_relu(x, 0.01)),
-            torch.nn.Sigmoid(),
-        )
+        self.generator = MLPGenerator(c, h, w, latent_dim, generator_features, generator_hidden_layers)
+
+        self.discriminator = MLPDiscriminator(c, h, w, discriminator_features, discriminator_hidden_layers)
 
     def generate(self, samples):
         device = next(self.parameters()).device
@@ -41,16 +33,17 @@ class GAN(torch.nn.Module):
         return self.generator(z)
 
     def get_discriminator_loss(self, real, fake):
-        real_p = self.discriminate(real)
-        fake_p = self.discriminate(fake)
+        real_logit = self.discriminate(real)
+        fake_logit = self.discriminate(fake)
 
-        discriminator_loss = - torch.log(real_p + 1e-8) - torch.log(1 - fake_p + 1e-8)
+        fake_label = torch.zeros_like(fake_logit)
+        real_label = torch.ones_like(real_logit)
 
-        return torch.mean(discriminator_loss)
+        return self.criterion(real_logit, real_label) + self.criterion(fake_logit, fake_label)
 
     def get_generator_loss(self, fake):
-        fake_p = self.discriminate(fake)
+        fake_logit = self.discriminate(fake)
 
-        generator_loss = - torch.log(fake_p + 1e-8)
+        fake_label = torch.ones_like(fake_logit)
 
-        return torch.mean(generator_loss)
+        return self.criterion(fake_logit, fake_label)
