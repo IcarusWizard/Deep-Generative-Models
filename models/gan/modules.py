@@ -48,7 +48,7 @@ class MLPDiscriminator(torch.nn.Module):
         return self.discriminator(x)   
 
 class ConvGenerator(torch.nn.Module):
-    def __init__(self, c, h, w, latent_dim, features):
+    def __init__(self, c, h, w, latent_dim, features, use_norm=True):
         super().__init__()
 
         downsampling = int(np.ceil(np.log2(h))) - 2
@@ -60,7 +60,8 @@ class ConvGenerator(torch.nn.Module):
         generator.append(Unflatten(out_features, 4, 4))
         
         for i in range(downsampling - 1):
-            generator.append(torch.nn.BatchNorm2d(out_features))
+            if use_norm:
+                generator.append(torch.nn.BatchNorm2d(out_features))
             generator.append(torch.nn.ReLU(True))
             if i == 0 and h == 28: # mnist
                 generator.append(torch.nn.ConvTranspose2d(out_features, out_features // 2, 4, 
@@ -70,7 +71,8 @@ class ConvGenerator(torch.nn.Module):
 
             out_features = out_features // 2
 
-        generator.append(torch.nn.BatchNorm2d(out_features))
+        if use_norm:
+            generator.append(torch.nn.BatchNorm2d(out_features))
         generator.append(torch.nn.ReLU(True))
         generator.append(torch.nn.ConvTranspose2d(out_features, c, 4, stride=2, padding=1, bias=False))
         generator.append(torch.nn.Tanh())
@@ -81,7 +83,7 @@ class ConvGenerator(torch.nn.Module):
         return self.generator(x)
 
 class ConvDiscriminator(torch.nn.Module):
-    def __init__(self, c, h, w, features):
+    def __init__(self, c, h, w, features, use_norm=True):
         super().__init__()
 
         downsampling = int(np.ceil(np.log2(h))) - 2    
@@ -95,7 +97,8 @@ class ConvDiscriminator(torch.nn.Module):
                 discriminator.append(torch.nn.Conv2d(in_features, out_features, 4, stride=2, padding=2, bias=False))
             else:
                 discriminator.append(torch.nn.Conv2d(in_features, out_features, 4, stride=2, padding=1, bias=False))
-            discriminator.append(torch.nn.BatchNorm2d(out_features))
+            if use_norm:
+                discriminator.append(torch.nn.BatchNorm2d(out_features))
             discriminator.append(torch.nn.LeakyReLU(0.2, True))
 
             in_features = out_features

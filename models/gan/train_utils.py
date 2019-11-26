@@ -1,5 +1,6 @@
 from .vanilla_gan import GAN
 from .dcgan import DCGAN
+from .wgan import WGAN
 
 import torch
 from tqdm import tqdm
@@ -23,6 +24,18 @@ def config_model(args, model_param):
             "generator_features" : args.generator_features,
         })              
         model = DCGAN(**model_param)
+    elif args.model == 'WGAN':
+        model_param.update({
+            "mode" : args.mode,
+            "latent_dim" : args.latent_dim,
+            "discriminator_features" : args.discriminator_features, 
+            "discriminator_hidden_layers" : args.discriminator_hidden_layers,
+            "generator_features" : args.generator_features,
+            "generator_hidden_layers" : args.generator_hidden_layers,
+            "use_norm_discriminator" : args.use_norm_discriminator,
+            "use_norm_generator" : args.use_norm_generator,
+        })
+        model = WGAN(**model_param)        
     else:
         raise ValueError('Model {} is not supported!'.format(args.model))
 
@@ -54,6 +67,12 @@ def train_gan(model, writer, train_loader, args):
                 discriminator_optim.zero_grad()
                 discriminator_loss.backward()
                 discriminator_optim.step()
+
+                if args.model == 'WGAN':
+                    with torch.no_grad():
+                        for name, value in model.discriminator.named_parameters():
+                            if 'weight' in name:
+                                value.clamp_(-args.clamp, args.clamp)
 
             # train generator only once
             fake = model.generate(real.shape[0])

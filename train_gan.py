@@ -25,6 +25,9 @@ if __name__ == '__main__':
     model_parser.add_argument('--discriminator_features', type=int, default=256)
     model_parser.add_argument('--generator_hidden_layers', type=int, default=2)
     model_parser.add_argument('--generator_features', type=int, default=1024)
+    model_parser.add_argument('--mode', type=str, default='conv', help='mode for WGAN')
+    model_parser.add_argument('--use_norm_discriminator', type=bool, default=True)
+    model_parser.add_argument('--use_norm_generator', type=bool, default=True)
 
     train_parser = parser.add_argument_group('training', "parameters for training config")
     train_parser.add_argument('--seed', type=int, default=None, help='manuall random seed')
@@ -41,6 +44,7 @@ if __name__ == '__main__':
     train_parser.add_argument('--discriminator_lr', type=float, default=1e-3)
     train_parser.add_argument('--discriminator_beta1', type=float, default=0.9)
     train_parser.add_argument('--discriminator_beta2', type=float, default=0.999)
+    train_parser.add_argument('--clamp', type=float, default=0.01)
 
     log_parser = parser.add_argument_group('log', "parameters for log config")
     log_parser.add_argument('--log_step', type=int, default=500, help='log period')

@@ -26,6 +26,7 @@ This repertory is in progressing, feel free to raise an issue if you find any bu
   * [x] [Vanilla GAN](https://arxiv.org/abs/1406.2661)
   * [x] [DCGAN](https://arxiv.org/abs/1511.06434)
   * [ ] [InfoGAN](http://arxiv.org/abs/1606.03657)
+  * [x] [WGAN](http://arxiv.org/abs/1701.07875)
   * [ ] [WGAN-GP](https://arxiv.org/abs/1704.00028)
   * [ ] [SNGAN](http://arxiv.org/abs/1802.05957)
   * [ ] [SAGAN](http://arxiv.org/abs/1805.08318)
