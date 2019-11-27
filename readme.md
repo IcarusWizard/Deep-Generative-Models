@@ -28,7 +28,7 @@ This repertory is in progressing, feel free to raise an issue if you find any bu
   * [ ] [InfoGAN](http://arxiv.org/abs/1606.03657)
   * [x] [WGAN](http://arxiv.org/abs/1701.07875)
   * [x] [WGAN-GP](https://arxiv.org/abs/1704.00028)
-  * [ ] [SNGAN](http://arxiv.org/abs/1802.05957)
+  * [x] [SNGAN](http://arxiv.org/abs/1802.05957)
   * [ ] [SAGAN](http://arxiv.org/abs/1805.08318)
   
 ## Datasets  

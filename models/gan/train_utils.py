@@ -2,6 +2,7 @@ from .vanilla_gan import GAN
 from .dcgan import DCGAN
 from .wgan import WGAN
 from .wgangp import WGANGP
+from .sngan import SNGAN
 
 import torch
 from tqdm import tqdm
@@ -46,7 +47,16 @@ def config_model(args, model_param):
             "discriminator_hidden_layers" : args.discriminator_hidden_layers,
             "generator_features" : args.generator_features,
         })
-        model = WGANGP(**model_param)                
+        model = WGANGP(**model_param)      
+    elif args.model == 'SNGAN':
+        model_param.update({
+            "mode" : args.mode,
+            "latent_dim" : args.latent_dim,
+            "discriminator_features" : args.discriminator_features, 
+            "discriminator_hidden_layers" : args.discriminator_hidden_layers,
+            "generator_features" : args.generator_features,
+        })
+        model = SNGAN(**model_param)              
     else:
         raise ValueError('Model {} is not supported!'.format(args.model))
 
