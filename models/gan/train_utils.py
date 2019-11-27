@@ -1,6 +1,7 @@
 from .vanilla_gan import GAN
 from .dcgan import DCGAN
 from .wgan import WGAN
+from .wgangp import WGANGP
 
 import torch
 from tqdm import tqdm
@@ -35,7 +36,17 @@ def config_model(args, model_param):
             "use_norm_discriminator" : args.use_norm_discriminator,
             "use_norm_generator" : args.use_norm_generator,
         })
-        model = WGAN(**model_param)        
+        model = WGAN(**model_param) 
+    elif args.model == 'WGAN-GP':
+        model_param.update({
+            "mode" : args.mode,
+            "latent_dim" : args.latent_dim,
+            "_lambda" : args._lambda,
+            "discriminator_features" : args.discriminator_features, 
+            "discriminator_hidden_layers" : args.discriminator_hidden_layers,
+            "generator_features" : args.generator_features,
+        })
+        model = WGANGP(**model_param)                
     else:
         raise ValueError('Model {} is not supported!'.format(args.model))
 

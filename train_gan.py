@@ -25,9 +25,11 @@ if __name__ == '__main__':
     model_parser.add_argument('--discriminator_features', type=int, default=256)
     model_parser.add_argument('--generator_hidden_layers', type=int, default=2)
     model_parser.add_argument('--generator_features', type=int, default=1024)
-    model_parser.add_argument('--mode', type=str, default='conv', help='mode for WGAN')
+    model_parser.add_argument('--mode', type=str, default='conv', 
+                              help='For WGAN, choose from mlp and conv; For WGAN-GP choose from conv and res')
     model_parser.add_argument('--use_norm_discriminator', type=bool, default=True)
     model_parser.add_argument('--use_norm_generator', type=bool, default=True)
+    model_parser.add_argument('--_lambda', type=float, default=10.0)
 
     train_parser = parser.add_argument_group('training', "parameters for training config")
     train_parser.add_argument('--seed', type=int, default=None, help='manuall random seed')

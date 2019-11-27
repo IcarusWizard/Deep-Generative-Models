@@ -23,10 +23,6 @@ class WGAN(torch.nn.Module):
         elif mode == 'conv':
             assert h == w, "only support square images"
 
-            downsampling = int(np.ceil(np.log2(h))) - 2
-
-            self.criterion = torch.nn.BCEWithLogitsLoss()
-
             self.generator = ConvGenerator(c, h, w, latent_dim, generator_features, use_norm_generator)
 
             self.discriminator = ConvDiscriminator(c, h, w, discriminator_features, use_norm_discriminator)
