@@ -2,6 +2,7 @@ import numpy as np
 import torch, torchvision, math
 from torch.functional import F
 from torch.nn import Parameter, init
+from torch import nn
 import matplotlib.pyplot as plt
 import pickle, torch, math, random, os
 import PIL.Image as Image
@@ -237,5 +238,82 @@ class ResDiscriminator(torch.nn.Module):
 
         _x = F.relu(_x)
         _x = torch.mean(_x, dim=(2, 3))
+
+        return self.dense(_x)
+
+class SelfAttention(nn.Module):
+    def __init__(self, features):
+        super().__init__()
+        
+        self.query_conv = torch.nn.Conv2d(features , features // 8, 1)
+        self.key_conv = torch.nn.Conv2d(features , features // 8, 1)
+        self.value_conv = torch.nn.Conv2d(features , features, 1)
+        self.gamma = torch.nn.Parameter(torch.zeros(1))
+
+    def forward(self, x):
+        b, c, h, w = x.shape
+        proj_query  = self.query_conv(x).view(b, -1, h * w).permute(0, 2, 1)
+        proj_key =  self.key_conv(x).view(b, -1, h * w)
+        energy =  torch.bmm(proj_query, proj_key)
+        attention = F.softmax(energy, dim=2) 
+        proj_value = self.value_conv(x).view(b, -1, h * w)
+
+        out = torch.bmm(proj_value, attention.permute(0, 2, 1))
+        out = out.view(b, c, h, w)
+        
+        out = self.gamma*out + x
+        return out
+
+class SelfAttentionGenerator(torch.nn.Module):
+    def __init__(self, c, h, w, latent_dim=128, features=128):
+        super().__init__()
+        self.latent_dim = latent_dim
+
+        downsampling = int(np.ceil(np.log2(h))) - 2
+
+        self.dense = torch.nn.Linear(latent_dim, 4 * 4 * features)
+
+        upblocks = [ResBlockUp(features, features, 3) for i in range(downsampling)]
+        upblocks.insert(-1, SelfAttention(features))
+        self.upblocks = torch.nn.ModuleList(upblocks)
+
+        self.output_bn = torch.nn.BatchNorm2d(features)
+        self.output_conv = torch.nn.Conv2d(features, 3, 3, padding=1)
+
+    def forward(self, z):
+        space_z = self.dense(z).view(z.shape[0], -1, 4, 4)
+
+        for upblock in self.upblocks:
+            space_z = upblock(space_z)
+
+        out = F.relu(self.output_bn(space_z))
+        return torch.tanh(self.output_conv(out))
+
+class SelfAttentionDiscriminator(torch.nn.Module):
+    def __init__(self, c, h, w, features=128, hidden_layers=2):
+        super().__init__()
+        downsampling = int(np.ceil(np.log2(h))) - 3
+        
+        downblocks = [ResBlockDown(3, features, 3), SelfAttention(features)]
+        for i in range(downsampling - 1):
+            downblocks.append(ResBlockDown(features, features, 3))
+
+        self.downblocks = torch.nn.ModuleList(downblocks)
+
+        self.resblocks = torch.nn.ModuleList([ResBlockDiscriminator(features, 3) for _ in range(hidden_layers)])
+
+        self.dense = torch.nn.Linear(features, 1)
+
+    def forward(self, x):
+        _x = x
+
+        for downblock in self.downblocks:
+            _x = downblock(_x)
+
+        for resblock in self.resblocks:
+            _x = resblock(_x)
+
+        _x = F.relu(_x)
+        _x = torch.sum(_x, dim=(2, 3))
 
         return self.dense(_x)

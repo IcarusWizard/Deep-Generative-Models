@@ -29,7 +29,7 @@ This repertory is in progressing, feel free to raise an issue if you find any bu
   * [x] [WGAN](http://arxiv.org/abs/1701.07875)
   * [x] [WGAN-GP](https://arxiv.org/abs/1704.00028)
   * [x] [SNGAN](http://arxiv.org/abs/1802.05957)
-  * [ ] [SAGAN](http://arxiv.org/abs/1805.08318)
+  * [x] [SAGAN](http://arxiv.org/abs/1805.08318)
   
 ## Datasets  
 * [MNIST](http://yann.lecun.com/exdb/mnist/)
