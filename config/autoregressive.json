@@ -1,0 +1,69 @@
+{
+    "PixelRNN" : {
+        "bmnist" : {
+            "dataset" : "bmnist",
+            "model" : "PixelRNN",
+            "custom" : false,
+            "mode" : "row",
+            "layers" : 7,
+            "features" : 16,
+            "post_features" : 1024,
+            "bits" : 1,
+            "seed" : null,
+            "batch_size" : 16,
+            "gpu" : "0",
+            "workers" : 4,
+            "steps" : 20000,
+            "lr" : 1e-3,
+            "beta1" : 0,
+            "beta2" : 0.99,
+            "log_step" : 500,
+            "generation_step" : 1000,
+            "suffix" : null
+        },
+
+        "cifar" : {
+            "dataset" : "cifar",
+            "model" : "PixelRNN",
+            "custom" : false,
+            "mode" : "bi",
+            "layers" : 7,
+            "features" : 16,
+            "post_features" : 1024,
+            "bits" : 8,
+            "seed" : null,
+            "batch_size" : 16,
+            "gpu" : "0",
+            "workers" : 4,
+            "steps" : 200000,
+            "lr" : 1e-3,
+            "beta1" : 0,
+            "beta2" : 0.99,
+            "log_step" : 500,
+            "generation_step" : 5000,
+            "suffix" : null
+        },
+
+        "celeba32" : {
+            "dataset" : "celeba32",
+            "model" : "PixelRNN",
+            "custom" : false,
+            "mode" : "bi",
+            "layers" : 7,
+            "features" : 16,
+            "post_features" : 1024,
+            "bits" : 8,
+            "seed" : null,
+            "batch_size" : 16,
+            "gpu" : "1",
+            "workers" : 4,
+            "steps" : 200000,
+            "lr" : 1e-3,
+            "beta1" : 0,
+            "beta2" : 0.99,
+            "log_step" : 500,
+            "generation_step" : 5000,
+            "suffix" : null
+        }
+    }
+}
