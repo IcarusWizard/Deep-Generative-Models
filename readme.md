@@ -12,7 +12,7 @@ This repertory is in progressing, feel free to raise an issue if you find any bu
 ## Models
 * Auto-regressive
   * [x] [PixelRNN](http://arxiv.org/abs/1601.06759)
-  * [ ] [PixelCNN](http://arxiv.org/abs/1606.05328)
+  * [x] [PixelCNN](http://arxiv.org/abs/1606.05328)
   * [ ] [PixelSNAIL](http://arxiv.org/abs/1712.09763)
 * FLOW
   - [x] [NICE](https://arxiv.org/abs/1410.8516)

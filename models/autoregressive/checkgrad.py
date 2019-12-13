@@ -1,4 +1,5 @@
-from .pixelrnn import PixelRNN
+from models.autoregressive.pixelrnn import PixelRNN
+from models.autoregressive.pixelcnn import PixelCNN
 
 import torch
 import matplotlib.pyplot as plt
@@ -11,7 +12,8 @@ def show(img):
     plt.imshow(img)
     plt.show()
 
-model = PixelRNN(3, 32, 32, mode='bi', layers=5)
+# model = PixelRNN(3, 32, 32, mode='bi', layers=5)
+model = PixelCNN(3, 32, 32, "res", 64, layers=16)
 
 x = torch.rand(1, 3, 32, 32, requires_grad=True)
 

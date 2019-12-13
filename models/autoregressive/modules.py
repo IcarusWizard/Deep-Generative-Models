@@ -3,6 +3,7 @@ from torch.functional import F
 
 from ..modules import MaskConv
 from .utils import build_maskA, build_maskB, shuffle, stew, unstew
+from .utils import build_horizontal_mask, build_vertical_mask, gate_activation
 
 class RowLSTM(torch.nn.Module):
     def __init__(self, features, height, width, group):
@@ -30,8 +31,8 @@ class RowLSTM(torch.nn.Module):
         # i = torch.cat([chunks[i] for i in range(12) if i % 4 == 2], dim=1)
         # g = torch.cat([chunks[i] for i in range(12) if i % 4 == 3], dim=1)
         # h = torch.cat([o, f, i, g], dim=1)
-
-        h = shuffle(h)
+        if self.group == 3:
+            h = shuffle(h)
 
         out_h = []
         _h = torch.zeros(h.shape[0], h.shape[1] // 4, 1, h.shape[3], device=x.device, dtype=x.dtype)
@@ -68,7 +69,8 @@ class BiLSTM(torch.nn.Module):
     def forward(self, x):
         h = self.i2s_conv(x)
 
-        h = shuffle(h) # maintain the dependency
+        if self.group == 3:
+            h = shuffle(h) # maintain the dependency
 
         left_h, right_h = stew(h)
 
@@ -102,5 +104,57 @@ class BiLSTM(torch.nn.Module):
 
         return x + self.skip_conv(out_h)
 
-        
+class MaskRes(torch.nn.Module):
+    def __init__(self, h, w, features, group):
+        # NOTE: You cannot use normalization that use a statistical mean and variance over space or channel,
+        # for space statistic will break the dependency of spacial order, while channel statistic will break 
+        # the dependency relationship of RGB pixels.
+        super().__init__()
+        self.skip_conv = torch.nn.Sequential(
+            # torch.nn.LayerNorm((2 * features, h, w)),
+            torch.nn.ReLU(True),
+            MaskConv(2 * features, features, (1, 1),
+                build_maskB(2 * features, features, (1, 1), group=group), padding=(0, 0)),
+            # torch.nn.LayerNorm((features, h, w)),
+            torch.nn.ReLU(True),
+            MaskConv(features, features, (3, 3),
+                build_maskB(features, features, (3, 3), group=group), padding=(1, 1)),
+            # torch.nn.LayerNorm((features, h, w)),
+            torch.nn.ReLU(True),
+            MaskConv(features, 2 * features, (1, 1),
+                build_maskB(features, 2 * features, (1, 1), group=group), padding=(0, 0)),
+        )
 
+    def forward(self, x):
+        return x + self.skip_conv(x)
+
+class GatePixelCNNBlock(torch.nn.Module):
+    def __init__(self, in_dim, features, filter_size=3):
+        super().__init__()
+
+        self.is_first = in_dim != features
+
+        padding = filter_size // 2
+
+        self.horizontal = MaskConv(in_dim, 2 * features, (1, filter_size),
+            build_horizontal_mask(in_dim, 2 * features, filter_size, self.is_first), padding=(0, padding))
+
+        self.horizontal_out = torch.nn.Conv2d(features, features, 1)
+
+        self.vertical = MaskConv(in_dim, 2 * features, filter_size,
+            build_vertical_mask(in_dim, 2 * features, filter_size, self.is_first), padding=padding)
+
+        self.trans = torch.nn.Conv2d(2 * features, 2 * features, 1)
+
+    def forward(self, horizontal_x, vertical_x):
+        vertical_mid = self.vertical(vertical_x)
+
+        horizontial_mid = self.trans(vertical_mid) + self.horizontal(horizontal_x)
+
+        horizontal_out = self.horizontal_out(gate_activation(horizontial_mid))
+        vertical_out = gate_activation(vertical_mid)
+
+        if not self.is_first:
+            horizontal_out += horizontal_x
+
+        return horizontal_out, vertical_out

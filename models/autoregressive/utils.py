@@ -50,6 +50,32 @@ def build_maskB(in_channels, out_channels, kernal_size, group=3):
 
     return mask
 
+def build_horizontal_mask(in_channels, out_channels, kernal_size, first=False):
+    mask = np.ones((in_channels, out_channels, 1, kernal_size))
+    mid = kernal_size // 2
+
+    # mask context
+    mask[:, :, :, (mid+1):] = 0
+    if first:
+        mask[:, :, :, mid] = 0
+
+    mask = np.transpose(mask, (1, 0, 2, 3))
+
+    return mask
+
+def build_vertical_mask(in_channels, out_channels, kernal_size, first=False):
+    mask = np.ones((in_channels, out_channels, kernal_size, kernal_size))
+    mid = kernal_size // 2
+
+    # mask context
+    mask[:, :, (mid+1):, :] = 0
+    if first:
+        mask[:, :, mid, :] = 0
+
+    mask = np.transpose(mask, (1, 0, 2, 3))
+
+    return mask        
+
 def shuffle(h):
     # NOTE: This is a wired operation!
     #|           r           |           g           |           b           |
@@ -90,3 +116,8 @@ def unstew(left, right):
         right_out[:, :, i, :] = right[:, :, i, (w - 1 - i) : (2 * w - 1 - i)]
 
     return left_out, right_out
+
+def gate_activation(x):
+    f, g = torch.chunk(x, 2, dim=1)
+
+    return torch.sigmoid(f) * torch.tanh(g)

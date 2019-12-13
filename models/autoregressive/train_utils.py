@@ -1,4 +1,5 @@
 from .pixelrnn import PixelRNN
+from .pixelcnn import PixelCNN
 
 import torch
 import numpy as np
@@ -17,6 +18,17 @@ def config_model(args, model_param):
             "bits" : args.bits,
         })
         model = PixelRNN(**model_param)
+    elif args.model == 'PixelCNN':
+        model_param.update({
+            "mode" : args.mode,
+            "features" : args.features,
+            "layers" : args.layers,
+            "bits" : args.bits,
+            "filter_size" : args.filter_size,
+            "post_features" : args.post_features,
+            "bits" : args.bits,
+        })
+        model = PixelCNN(**model_param)
     else:
         raise ValueError('Model {} is not supported!'.format(args.model))
 

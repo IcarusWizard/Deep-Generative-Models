@@ -24,6 +24,7 @@ if __name__ == '__main__':
     model_parser.add_argument('--features', type=int, default=16)
     model_parser.add_argument('--post_features', type=int, default=1024)
     model_parser.add_argument('--bits', type=int, default=8)
+    model_parser.add_argument('--filter_size', type=int, default=3)
 
     train_parser = parser.add_argument_group('training', "parameters for training config")
     train_parser.add_argument('--seed', type=int, default=None, help='manuall random seed')
