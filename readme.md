@@ -5,9 +5,16 @@ This repertory is in progressing, feel free to raise an issue if you find any bu
 ## Requirement  
 * PyTorch >= 1.0 (This code was develop on 1.2, but it should also work fine on other version)
 * tensorboard (tb-nightly)
-* numpy
+* numpy, scipy 
 * matplotlib
 * tqdm
+
+## Setup  
+Recommend to setup with Anaconda:
+```
+conda env create -f env.yml
+conda activate generative-models
+```
 
 ## Models
 * Auto-regressive
@@ -50,6 +57,7 @@ This repertory is in progressing, feel free to raise an issue if you find any bu
     datasets.py  # data utilities
     /<method>
         train_utils.py    # training procedure
+        test_utils.py     # test functions
         utils.py          # method's utility functions
         modules.py        # method's utility modules
         <model.py>        # model class
