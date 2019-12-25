@@ -35,17 +35,8 @@ if __name__ == '__main__':
     print('seed: {}'.format(checkpoint['seed']))
     print('model parameters: {}'.format(checkpoint['model_parameters']))
 
-    # config model
-    model, checkpoint = config_model(train_time_args, args, checkpoint)
-
-    # load state dict
-    state_dict = checkpoint['model_state_dict']
-    model_state_dick = model.state_dict()
-    for k in list(state_dict.keys()):
-        if 'mask' in k: state_dict[k] = model_state_dick[k]
-    model.load_state_dict(checkpoint['model_state_dict'])
-    model.eval()
-    
+    # restore checkpoint
+    model = config_model(train_time_args, args, checkpoint)
     model = model.to(device)
 
     # run test

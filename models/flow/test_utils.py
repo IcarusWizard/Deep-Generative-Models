@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from . import NICE, RealNVP2D, GLOW
 
 def config_model(train_time_args, args, checkpoint):
+    # build model
     if train_time_args.model == 'NICE':
         assert not args.mode == 'extrapolation', 'NICE do not support mode extrapolation'
         model = NICE(**checkpoint['model_parameters'])
@@ -21,9 +22,20 @@ def config_model(train_time_args, args, checkpoint):
     else:
         raise ValueError('Model {} is not supported!'.format(train_time_args.model))
 
-    return model, checkpoint
+    # load state dict
+    state_dict = checkpoint['model_state_dict']
+    model_state_dick = model.state_dict()
+    for k in list(state_dict.keys()):
+        if 'mask' in k: state_dict[k] = model_state_dick[k] # replace mask matrix when running extrapolation
+    model.load_state_dict(checkpoint['model_state_dict'])
+    model.eval()
+
+    return model
 
 def generation(model, temperature):
+    """
+        Generate 64 samples from learned model
+    """
     with torch.no_grad():
         imgs = torch.clamp(model.sample(64, temperature=temperature), 0, 1)
         imgs = imgs.cpu().permute(0, 2, 3, 1).numpy()
@@ -39,6 +51,10 @@ def generation(model, temperature):
     plt.show()
 
 def extrapolation(model, temperature, scale):
+    """
+        Extrapolation for learned model, only support scale equal to 2, 4, 8
+        See more information in Appendix C in RealNVP paper
+    """
     size = 8 // scale
     with torch.no_grad():
         imgs = torch.clamp(model.sample(size ** 2, temperature=temperature), 0, 1)
@@ -59,6 +75,9 @@ def extrapolation(model, temperature, scale):
     plt.show()    
 
 def interpolation(model, loader):
+    """
+        Linear interpolation between pair of training data in the latent space.
+    """
     device = next(model.parameters()).device
     step = 0
     imgs = []
