@@ -3,11 +3,11 @@ A collection of my PyTorch implementation of several deep generative models.
 This repertory is in progressing, feel free to raise an issue if you find any bug. 
 
 ## Requirement  
-* PyTorch >= 1.0 (This code was develop on 1.2, but it should also work fine on other version)
+* PyTorch >= 1.0 (This code was develop on 1.3.1, but it should also work fine on other version)
 * tensorboard (tb-nightly)
-* numpy, scipy 
-* matplotlib
-* tqdm
+* numpy, scipy (ndarry support)
+* matplotlib, moviepy (visualizing result)
+* tqdm (progress bar)
 
 ## Setup  
 Recommend to setup with Anaconda:
