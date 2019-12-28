@@ -6,7 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 import os, argparse
 from tqdm import tqdm
 
-from models.gan.test_utils import config_model, generation, manifold, interpolation
+from models.gan.test_utils import config_model, generation, manifold, interpolation, helix_interpolation
 from models.utils import setup_seed, select_gpus, nats2bits, config_dataset, load_config
 
 from models.gan import LOGDIR, MODELDIR, VERSION, CONFIG
@@ -49,6 +49,9 @@ if __name__ == '__main__':
     elif args.mode == 'interpolation':
         writer = SummaryWriter(os.path.join(LOGDIR, 'GIF', args.model))
         interpolation(generator, latent_dim, writer, args.truncation)
+    elif args.mode == 'helix_interpolation':
+        writer = SummaryWriter(os.path.join(LOGDIR, 'GIF', args.model))
+        helix_interpolation(generator, latent_dim, writer, args.truncation)        
     else:
         raise ValueError('Mode {} is not supported!'.format(args.mode))
 

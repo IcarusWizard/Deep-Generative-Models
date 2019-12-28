@@ -138,18 +138,21 @@ def manifold(generator, latent_dim, mode='linear', num=9):
             axes[i, j].axis('off')
     plt.show()    
 
-def points_linear_interpolation(z1, z2, frames):
+def points_linear_interpolation(z1, z2, frames, focus=False):
     """
         linear interpolation from tensor z1 to z2, 
         the result does not contain endpoint 
     """
     eps = np.linspace(0, 1, num=frames, endpoint=False)
+    if focus:
+        eps = 0.5 - 0.5 * np.cos(np.pi * eps) # make the interpolation more focus on position near z1 and z2
 
     return torch.cat([(z1 * (1 - _eps) + z2 * _eps).unsqueeze(dim=0) for _eps in eps], dim=0)
-
-
     
 def interpolation(generator, latent_dim, writer, truncation, num=10, frames=30):
+    """
+        generate linear interpolation video for the given generator
+    """
     device = next(generator.parameters()).device
     dtype = next(generator.parameters()).dtype
     
@@ -172,5 +175,45 @@ def interpolation(generator, latent_dim, writer, truncation, num=10, frames=30):
     filename = os.path.join(tempfile.gettempdir(), 'interpolation.gif')
     imgs = imgs[0].permute(0, 2, 3, 1).numpy() * 255
     clip = mpy.ImageSequenceClip([imgs[i] for i in range(imgs.shape[0])], fps=frames)
+    clip.write_gif(filename, verbose=False, logger=None)
+    print('gif has written to {}'.format(filename))
+
+def helix_interpolation(generator, latent_dim, writer, truncation, num=10, frames=120):
+    """
+        generate helix interpolation video for the given generator
+    """
+    device = next(generator.parameters()).device
+    dtype = next(generator.parameters()).dtype
+    
+    imgs = []
+    with torch.no_grad():
+        # generate Archimedean Spiral
+        max_radius = latent_dim ** 0.5
+
+        basis_x, basis_y = generate_plane(latent_dim)
+
+        total_frames = num * frames
+        t = np.arange(total_frames)
+        theta = (2 * np.pi * t / frames).reshape((total_frames, 1))
+        radius = (t / total_frames * max_radius).reshape((total_frames, 1))
+
+        z = radius * np.cos(theta) * basis_x.reshape((1, latent_dim)) + \
+            radius * np.sin(theta) * basis_y.reshape((1, latent_dim))
+
+        z = torch.tensor(z, dtype=dtype, device=device)
+
+        imgs = []
+        for _z in torch.chunk(z, 10, dim=0):
+            _imgs = torch.clamp(generator(_z) / 2 + 0.5, 0, 1).cpu()
+            imgs.append(_imgs)
+        imgs = torch.cat(imgs, dim=0).cpu() # T x C x H x W
+
+    # save to tensorboard 
+    writer.add_video('interpolation', imgs.unsqueeze(dim=0), fps=frames)
+
+    # save gif to temp folder
+    filename = os.path.join(tempfile.gettempdir(), 'interpolation.gif')
+    imgs = imgs.permute(0, 2, 3, 1).numpy() * 255
+    clip = mpy.ImageSequenceClip([imgs[i] for i in range(imgs.shape[0])], fps=frames // 4)
     clip.write_gif(filename, verbose=False, logger=None)
     print('gif has written to {}'.format(filename))
