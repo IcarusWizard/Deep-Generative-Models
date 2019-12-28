@@ -192,6 +192,29 @@
             "discriminator_beta2" : 0.999,
             "log_step" : 100,
             "suffix" : null
+        },
+
+        "celeba128" : {
+            "dataset" : "celeba128",
+            "model" : "DCGAN",
+            "custom" : false,
+            "latent_dim" : 100,
+            "discriminator_features" : 512,
+            "generator_features" : 512,
+            "seed" : null,
+            "batch_size" : 128,
+            "gpu" : "0",
+            "workers" : 8,
+            "steps" : 40000,
+            "n_critic" : 1,
+            "generator_lr" : 2e-4,
+            "generator_beta1" : 0.5,
+            "generator_beta2" : 0.999,
+            "discriminator_lr" : 2e-4,
+            "discriminator_beta1" : 0.5,
+            "discriminator_beta2" : 0.999,
+            "log_step" : 100,
+            "suffix" : null
         }
     },  
 
