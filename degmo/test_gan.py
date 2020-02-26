@@ -6,10 +6,11 @@ from torch.utils.tensorboard import SummaryWriter
 import os, argparse
 from tqdm import tqdm
 
-from models.gan.test_utils import config_model, generation, manifold, interpolation, helix_interpolation
-from models.utils import setup_seed, select_gpus, nats2bits, config_dataset, load_config
+from degmo.gan.test_utils import config_model, generation, manifold, interpolation, helix_interpolation
+from degmo.utils import setup_seed, select_gpus, nats2bits, config_dataset, load_config
+from degmo import LOGDIR, MODELDIR, VERSION, CONFIG_PATH
 
-from models.gan import LOGDIR, MODELDIR, VERSION, CONFIG
+CONFIG = os.path.join(CONFIG_PATH, 'gan.json')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

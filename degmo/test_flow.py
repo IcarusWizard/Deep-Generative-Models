@@ -4,10 +4,12 @@ import torch, torchvision
 
 import os, argparse
 
-from models.utils import step_loader, select_gpus, config_dataset
-from models.flow.test_utils import config_model, generation, extrapolation, interpolation
+import degmo
+from degmo.utils import step_loader, select_gpus, config_dataset
+from degmo.flow.test_utils import config_model, generation, extrapolation, interpolation
+from degmo import LOGDIR, MODELDIR, VERSION, CONFIG_PATH
 
-from models.flow import LOGDIR, MODELDIR, VERSION
+CONFIG = os.path.join(CONFIG_PATH, 'flow.json')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

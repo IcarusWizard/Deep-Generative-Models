@@ -6,27 +6,27 @@ from torch.utils.tensorboard import SummaryWriter
 import os, argparse
 from tqdm import tqdm
 
-from models.vae import config_model, train_vae
-from models.utils import setup_seed, select_gpus, nats2bits, config_dataset, load_config
+import degmo
+from degmo.autoregressive import config_model, train_autoregressive
+from degmo.utils import setup_seed, select_gpus, nats2bits, config_dataset, load_config
+from degmo import LOGDIR, MODELDIR, VERSION, CONFIG_PATH
 
-from models.vae import LOGDIR, MODELDIR, VERSION, CONFIG
+CONFIG = os.path.join(CONFIG_PATH, 'autoregressive.json')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', type=str, default='mnist',
+    parser.add_argument('--dataset', type=str, default='bmnist',
                         help='choose from bmnist, mnist, svhn, cifar, celeba32, celeba64, celeba128')
-    parser.add_argument('--model', type=str, default='VAE',
-                        help='choose from VAE, CONV-VAE, VQ-VAE')
+    parser.add_argument('--model', type=str, default='PixelRNN',
+                        help='choose from PixelRNN, PixelCNN, PixelSNAIL')
     parser.add_argument('--custom', action='store_true', help='enable custom config')
 
     model_parser = parser.add_argument_group('model', 'parameters for model config')
-    model_parser.add_argument('--latent_dim', type=int, default=2)
-    model_parser.add_argument('--hidden_layers', type=int, default=5)
-    model_parser.add_argument('--features', type=int, default=512)
-    model_parser.add_argument('--down_sampling', type=int, default=2)
-    model_parser.add_argument('--output_type', type=str, default='gauss',
-                              help='the output mode for vae decoder, choose from fix_std, gauss, bernoulli')
-    model_parser.add_argument('--use_mce', action='store_true', help='use Mento Carlo Estimation to compute kl divergence')
+    model_parser.add_argument('--layers', type=int, default=7)
+    model_parser.add_argument('--features', type=int, default=16)
+    model_parser.add_argument('--post_features', type=int, default=1024)
+    model_parser.add_argument('--bits', type=int, default=8)
+    model_parser.add_argument('--filter_size', type=int, default=3)
 
     train_parser = parser.add_argument_group('training', "parameters for training config")
     train_parser.add_argument('--seed', type=int, default=None, help='manuall random seed')
@@ -34,13 +34,14 @@ if __name__ == '__main__':
     train_parser.add_argument('--gpu', type=str, default='0')
     train_parser.add_argument('--workers', type=int, default=9999,
                               help='how many workers use for dataloader, default is ALL')
-    train_parser.add_argument('--steps', type=int, default=30000)
+    train_parser.add_argument('--steps', type=int, default=20000)
     train_parser.add_argument('--lr', type=float, default=1e-3)
     train_parser.add_argument('--beta1', type=float, default=0.9)
     train_parser.add_argument('--beta2', type=float, default=0.999)
 
     log_parser = parser.add_argument_group('log', "parameters for log config")
     log_parser.add_argument('--log_step', type=int, default=500, help='log period')
+    log_parser.add_argument('--generation_step', type=int, default=1000, help='generation period')
     log_parser.add_argument('--suffix', type=str, default=None, help='suffix in log folder and model file')
 
     args = parser.parse_args()
@@ -53,8 +54,6 @@ if __name__ == '__main__':
             print("Warning: there is no default config for the combination of {} and {}, use custom config instead!".format(
                 args.model, args.dataset
             ))
-
-    assert not (args.dataset == 'bmnist') ^ (args.output_type == 'bernoulli'), 'bmnist can only use with bernoulli output type'
     
     # config gpu
     select_gpus(args.gpu) 
@@ -84,7 +83,7 @@ if __name__ == '__main__':
     writer = SummaryWriter(LOGDIR + '{}'.format(filenames['log_name']))
 
     # train model
-    model, test_loss = train_vae(model, optim, writer, train_loader, val_loader, test_loader, args)
+    model, test_loss = train_autoregressive(model, optim, writer, train_loader, val_loader, test_loader, args)
 
     # save checkpoint
     torch.save({
