@@ -82,7 +82,7 @@ if __name__ == '__main__':
     optim = torch.optim.Adam(model.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
 
     # open log
-    writer = SummaryWriter(LOGDIR + '{}'.format(filenames['log_name']))
+    writer = SummaryWriter(os.path.join(LOGDIR,'{}'.format(filenames['log_name'])))
 
     # train model
     model, test_loss = train_autoregressive(model, optim, writer, train_loader, val_loader, test_loader, args)
@@ -96,4 +96,4 @@ if __name__ == '__main__':
         "model_parameters" : model_param,
         "seed" : seed,
         "version" : VERSION,
-    }, MODELDIR + '{}.pt'.format(filenames['model_name']))
+    }, os.path.join(MODELDIR,'{}.pt'.format(filenames['model_name'])))

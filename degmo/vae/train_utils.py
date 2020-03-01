@@ -1,5 +1,6 @@
 from .vae import VAE
 from .convvae import CONV_VAE
+from .fvae import FVAE
 import torch
 from tqdm import tqdm
 
@@ -25,6 +26,16 @@ def config_model(args, model_param):
             "use_mce" : args.use_mce,
         })        
         model = CONV_VAE(**model_param)
+    elif args.model == 'FVAE':
+        model_param.update({
+            "latent_dim" : args.latent_dim,
+            "features" : args.features, 
+            "hidden_layers" : args.hidden_layers,
+            "flow_features" : args.flow_features,
+            "flow_hidden_layers" : args.flow_hidden_layers,
+            "flow_num_transformation" : args.flow_num_transformation,
+        })        
+        model = FVAE(**model_param)
     elif args.model == 'VQ-VAE':
         pass
     else:
@@ -39,32 +50,32 @@ def train_vae(model, optim, writer, train_loader, val_loader, test_loader, args)
         for batch in step_loader(train_loader):
             batch = batch[0].to(device)
 
-            loss, kl, reconstruction_loss = model(batch)
+            loss, info = model(batch)
 
             optim.zero_grad()
             loss.backward()
             optim.step()
 
             if step % args.log_step == 0:
-                val_loss, val_kl, val_reconstruction_loss = test_vae(model, val_loader)
+                val_loss, val_info = test_vae(model, val_loader)
 
                 print('In Step {}'.format(step))
                 print('-' * 15)
                 print('In training set:')
                 print('NELOB is {0:{1}} bits'.format(nats2bits(loss.item()), '.5f'))
-                print('KL divergence is {0:{1}} bits'.format(nats2bits(kl.item()), '.5f'))
-                print('Reconstruction loss is {0:{1}} bits'.format(nats2bits(reconstruction_loss.item()), '.5f'))
+                for k in info.keys():
+                    print('{0} is {1:{2}} bits'.format(k, nats2bits(info[k].item()), '.5f'))
                 print('In validation set:')
                 print('NELOB is {0:{1}} bits'.format(nats2bits(val_loss.item()), '.5f'))
-                print('KL divergence is {0:{1}} bits'.format(nats2bits(val_kl.item()), '.5f'))
-                print('Reconstruction loss is {0:{1}} bits'.format(nats2bits(val_reconstruction_loss.item()), '.5f'))
+                for k in val_info.keys():
+                    print('{0} is {1:{2}} bits'.format(k, nats2bits(val_info[k].item()), '.5f'))
 
                 writer.add_scalars('NELOB', {'train' : nats2bits(loss.item()), 
-                                                'val' : nats2bits(val_loss.item())}, global_step=step)
-                writer.add_scalars('KL divergence', {'train' : nats2bits(kl.item()), 
-                                                        'val' : nats2bits(val_kl.item())}, global_step=step)
-                writer.add_scalars('Reconstruction loss', {'train' : nats2bits(reconstruction_loss.item()), 
-                                                            'val' : nats2bits(val_reconstruction_loss.item())}, global_step=step)
+                                             'val' : nats2bits(val_loss.item())}, global_step=step)
+                for k in info.keys():
+                    writer.add_scalars(k, {'train' : nats2bits(info[k].item()), 
+                                           'val' : nats2bits(val_info[k].item())}, global_step=step)
+
                 imgs = torch.clamp(model.sample(64, deterministic=True), 0, 1)
                 writer.add_images('samples', imgs, global_step=step)
 
@@ -74,11 +85,11 @@ def train_vae(model, optim, writer, train_loader, val_loader, test_loader, args)
             if step >= args.steps:
                 break
 
-    test_loss, test_kl, test_reconstruction_loss = test_vae(model, test_loader)
+    test_loss, test_info = test_vae(model, test_loader)
     print('In test set:')
     print('NELOB is {0:{1}} bits'.format(nats2bits(test_loss.item()), '.5f'))
-    print('KL divergence is {0:{1}} bits'.format(nats2bits(test_kl.item()), '.5f'))
-    print('Reconstruction loss is {0:{1}} bits'.format(nats2bits(test_reconstruction_loss.item()), '.5f'))
+    for k in test_info.keys():
+        print('{0} is {1:{2}} bits'.format(k, nats2bits(test_info[k].item()), '.5f'))
 
     return model, test_loss
 
@@ -87,18 +98,17 @@ def test_vae(model, loader):
 
     with torch.no_grad():
         num = 0
+        info = {}
         loss = 0
-        kl = 0
-        reconstruction_loss = 0
         for batch in iter(loader):
             num += 1
             batch = batch[0].to(device)
-            _loss, _kl, _reconstruction_loss = model(batch)
+            _loss, _info = model(batch)
             loss += _loss
-            kl += _kl
-            reconstruction_loss += _reconstruction_loss 
+            for k in _info.keys():
+                info[k] = info.get(k, 0) + _info[k]
         loss = loss / num
-        kl = kl / num
-        reconstruction_loss = reconstruction_loss / num
+        for k in info.keys():
+            info[k] = info[k] / num
 
-    return loss, kl, reconstruction_loss
+    return loss, info

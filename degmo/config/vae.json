@@ -260,5 +260,53 @@
             "log_step" : 500,
             "suffix" : null
         }    
+    },
+
+    "FVAE" : {
+        "mnist" : {
+            "dataset" : "mnist",
+            "model" : "FVAE",
+            "custom" : false,
+            "latent_dim" : 2,
+            "hidden_layers" : 5,
+            "features" : 128,
+            "flow_features" : 64, 
+            "flow_hidden_layers" : 2,
+            "flow_num_transformation" : 4,
+            "output_type" : "gauss",
+            "seed" : null,
+            "batch_size" : 256,
+            "gpu" : "0",
+            "workers" : 4,
+            "steps" : 10000,
+            "lr" : 1e-3,
+            "beta1" : 0.9,
+            "beta2" : 0.999,
+            "log_step" : 500,
+            "suffix" : null
+        },
+
+        "cifar" : {
+            "dataset" : "cifar",
+            "model" : "FVAE",
+            "custom" : false,
+            "latent_dim" : 32,
+            "hidden_layers" : 5,
+            "features" : 512,
+            "flow_features" : 256, 
+            "flow_hidden_layers" : 3,
+            "flow_num_transformation" : 6,
+            "output_type" : "gauss",
+            "seed" : null,
+            "batch_size" : 256,
+            "gpu" : "0",
+            "workers" : 4,
+            "steps" : 10000,
+            "lr" : 1e-3,
+            "beta1" : 0.9,
+            "beta2" : 0.999,
+            "log_step" : 500,
+            "suffix" : null
+        }
     }
 }

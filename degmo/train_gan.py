@@ -89,7 +89,7 @@ if __name__ == '__main__':
     model = model.to(device)
 
     # open log
-    writer = SummaryWriter(LOGDIR + '{}'.format(filenames['log_name']))
+    writer = SummaryWriter(os.path.join(LOGDIR, '{}'.format(filenames['log_name'])))
 
     # train model
     model, discriminator_optim, generator_optim = train_gan(model, writer, train_loader, args)
@@ -102,4 +102,4 @@ if __name__ == '__main__':
         "model_parameters" : model_param,
         "seed" : seed,
         "version" : VERSION,
-    }, MODELDIR + '{}.pt'.format(filenames['model_name']))
+    }, os.path.join(MODELDIR,'{}.pt'.format(filenames['model_name'])))

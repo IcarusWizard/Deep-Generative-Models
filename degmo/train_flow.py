@@ -85,7 +85,7 @@ if __name__ == '__main__':
     model = model.to(device)
 
     # open writer
-    writer = SummaryWriter(LOGDIR + '{}'.format(filenames['log_name']))
+    writer = SummaryWriter(os.path.join(LOGDIR, '{}'.format(filenames['log_name'])))
 
     # train model
     model, optim, test_loss = train_flow(model, writer, train_loader, val_loader, test_loader, args)
@@ -99,4 +99,4 @@ if __name__ == '__main__':
         "model_parameters" : model_param,
         "seed" : seed,
         "version" : VERSION,
-    }, MODELDIR + '{}.pt'.format(filenames['model_name']))
+    }, os.path.join(MODELDIR, '{}.pt'.format(filenames['model_name'])))

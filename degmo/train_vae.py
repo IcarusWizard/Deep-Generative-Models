@@ -20,13 +20,16 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, default='mnist',
                         help='choose from bmnist, mnist, svhn, cifar, celeba32, celeba64, celeba128')
     parser.add_argument('--model', type=str, default='VAE',
-                        help='choose from VAE, CONV-VAE, VQ-VAE')
+                        help='choose from VAE, CONV-VAE, FVAE, VQ-VAE')
     parser.add_argument('--custom', action='store_true', help='enable custom config')
 
     model_parser = parser.add_argument_group('model', 'parameters for model config')
     model_parser.add_argument('--latent_dim', type=int, default=2)
     model_parser.add_argument('--hidden_layers', type=int, default=5)
     model_parser.add_argument('--features', type=int, default=512)
+    model_parser.add_argument('--flow_features', type=int, default=64)
+    model_parser.add_argument('--flow_hidden_layers', type=int, default=3)
+    model_parser.add_argument('--flow_num_transformation', type=int, default=3)
     model_parser.add_argument('--down_sampling', type=int, default=2)
     model_parser.add_argument('--output_type', type=str, default='gauss',
                               help='the output mode for vae decoder, choose from fix_std, gauss, bernoulli')
@@ -85,7 +88,7 @@ if __name__ == '__main__':
     optim = torch.optim.Adam(model.parameters(), lr=args.lr, betas=(args.beta1, args.beta2))
 
     # open log
-    writer = SummaryWriter(LOGDIR + '{}'.format(filenames['log_name']))
+    writer = SummaryWriter(os.path.join(LOGDIR, '{}'.format(filenames['log_name'])))
 
     # train model
     model, test_loss = train_vae(model, optim, writer, train_loader, val_loader, test_loader, args)
@@ -99,4 +102,4 @@ if __name__ == '__main__':
         "model_parameters" : model_param,
         "seed" : seed,
         "version" : VERSION,
-    }, MODELDIR + '{}.pt'.format(filenames['model_name']))
+    }, os.path.join(MODELDIR, '{}.pt'.format(filenames['model_name'])))

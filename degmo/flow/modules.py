@@ -105,6 +105,30 @@ class Dequantization(torch.nn.Module):
         x /= 2.
         return x
 
+class AffineCoupling1D(torch.nn.Module):
+    def __init__(self, input_dim, features, hidden_layers, zero_init=True):
+        super().__init__()
+        self.coupling = MLP(input_dim // 2, input_dim, features, hidden_layers)
+
+        # Initialize this coupling as an identical mapping
+        if zero_init:
+            with torch.no_grad():
+                state_dict = self.coupling.state_dict()
+                state_dict['end.weight'].fill_(0)
+                state_dict['end.bias'].fill_(0)
+        
+    def forward(self, x):
+        x1, x2 = torch.chunk(x, 2, dim=1)
+        logs, t = torch.chunk(self.coupling(x1), 2, dim=1)
+        logs = torch.tanh(logs)
+        return torch.cat([x2 * torch.exp(logs) + t, x1], dim=1), torch.sum(logs, dim=1)
+    
+    def backward(self, z):
+        z1, z2 = torch.chunk(z, 2, dim=1)
+        logs, t = torch.chunk(self.coupling(z2), 2, dim=1)
+        logs = torch.tanh(logs)
+        return torch.cat([z2, (z1 - t) * torch.exp(-logs)], dim=1)
+
 # class RealNVP_BatchNorm2D(torch.nn.Module):
 #     def __init__(self, features, pho=0.9, eps=0.5):
 #         super().__init__()

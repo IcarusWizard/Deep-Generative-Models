@@ -66,7 +66,10 @@ class VAE(torch.nn.Module):
         kl = torch.mean(kl)
         reconstruction_loss = torch.mean(torch.sum(reconstruction_loss, dim=(1, 2, 3)))
 
-        return kl + reconstruction_loss, kl, reconstruction_loss
+        return kl + reconstruction_loss, {
+            "KL divergence" : kl,
+            "Reconstruction loss" : reconstruction_loss,
+        }
     
     def encode(self, x):
         mu, logs = torch.chunk(self.encoder(x), 2, dim=1)
