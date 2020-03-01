@@ -1,8 +1,9 @@
-from os.path import join, dirname, realpath
+import os
 from setuptools import setup
 import sys
 
-from degmo import __version__
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'degmo'))
+from version import __version__
 
 assert sys.version_info.major == 3, \
     "This repo is designed to work with Python 3." \

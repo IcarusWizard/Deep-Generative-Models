@@ -1,7 +1,7 @@
 import os
 import os.path as osp
 
-__version__ = 0.1
+from .version import __version__
 VERSION = __version__
 
 from degmo import autoregressive, flow, vae, gan
