@@ -11,6 +11,8 @@ from degmo.utils import config_dataset, setup_seed, step_loader, select_gpus, na
 from degmo import LOGDIR, MODELDIR, VERSION, CONFIG_PATH
 
 CONFIG = os.path.join(CONFIG_PATH, 'flow.json')
+LOGDIR = os.path.join(LOGDIR, 'flow')
+MODELDIR = os.path.join(MODELDIR, 'flow')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -3,8 +3,3 @@ from .realnvp import RealNVP2D
 from .glow import GLOW
 
 from .train_utils import config_model, train_flow
-
-LOGDIR = 'logs/flow/'
-MODELDIR = 'checkpoints/flow/'
-CONFIG = 'config/flow.json'
-VERSION = '0.1'

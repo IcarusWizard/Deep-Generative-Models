@@ -10,6 +10,8 @@ from degmo.flow.test_utils import config_model, generation, extrapolation, inter
 from degmo import LOGDIR, MODELDIR, VERSION, CONFIG_PATH
 
 CONFIG = os.path.join(CONFIG_PATH, 'flow.json')
+LOGDIR = os.path.join(LOGDIR, 'flow')
+MODELDIR = os.path.join(MODELDIR, 'flow')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

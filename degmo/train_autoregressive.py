@@ -12,6 +12,8 @@ from degmo.utils import setup_seed, select_gpus, nats2bits, config_dataset, load
 from degmo import LOGDIR, MODELDIR, VERSION, CONFIG_PATH
 
 CONFIG = os.path.join(CONFIG_PATH, 'autoregressive.json')
+LOGDIR = os.path.join(LOGDIR, 'autoregressive')
+MODELDIR = os.path.join(MODELDIR, 'autoregressive')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

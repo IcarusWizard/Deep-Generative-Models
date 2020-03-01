@@ -1,4 +1,4 @@
-from degmo.datasets.registry import add_dataset, make_dataset
+from .registry import add_dataset, make_dataset
 from .datasets import *
 
 add_dataset('bmnist', load_bmnist)

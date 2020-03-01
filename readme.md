@@ -11,7 +11,7 @@ This repertory is in progressing, feel free to raise an issue if you find any bu
 
 ## Setup  
 Recommend to setup with Anaconda
-```
+```bash
 git clone https://github.com/IcarusWizard/Deep-Generative-Models
 cd Deep-Generative-Models
 pip install -e .
@@ -46,7 +46,7 @@ pip install -e .
 * [CelebA](http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html)  
 
 If you want to add new dataset, you need to define a creator function which returns three `torch.utils.data.Dataset` for training, validation, testing, and a dict holds the configuration of the dataset (c, h, w). Then you can add your custom loader through:
-```
+```python
 import degmo
 def custom_creater():
   ......
@@ -57,7 +57,7 @@ degmo.add_dataset('name', custom_creater)
 
 ## Code  
 ### Structure  
-```
+```bash
 logs/          # default tensorboard log folder
 checkpoints/   # default checkpoints folder
 degmo/         # main folder
@@ -67,20 +67,20 @@ degmo/         # main folder
   modules.py     # shared utility modules
   datasets.py    # data utilities
   <method>/
-      train_utils.py    # training procedure
-      test_utils.py     # test functions
-      utils.py          # method's utility functions
-      modules.py        # method's utility modules
-      <model.py>        # model class
+    train_utils.py    # training procedure
+    test_utils.py     # test functions
+    utils.py          # method's utility functions
+    modules.py        # method's utility modules
+    <model.py>        # model class
     ......
 ```
 ### Train  
-Run `python -m degmo.train_<method>.py --dataset <dataset> --model <model>` to train in default configuration.
-You can run `python -m degmo.check_default_config.py <method>` to find the default configuration we provide, or just look inside `degmo/config` folder.  
-If you want to tune some parameters for yourself, pass `--custom` to the training script, run `python -m degmo.train_<method>.py -h` to see all the parameters that you can tune.  
+Run `python -m degmo.train_<method> --dataset <dataset> --model <model>` to train in default configuration.
+You can run `python -m degmo.check_default_config <method>` to find the default configuration we provide, or just look inside `degmo/config` folder.  
+If you want to tune some parameters for yourself, pass `--custom` to the training script, run `python -m degmo.train_<method> -h` to see all the parameters that you can tune.  
 **Note:** All the default configurations are tested on a single RTX 2080Ti GPU with 11G memory, if you cannot run some default configurations (i.e. Glow), please consider reduce the batch size or features in config file or with a custom mode.  
 
 During and after training, you can use `tensorboard --logdir=logs` to monitor progress.
 
 ### Test  
-Run `python -m degmo.test_<model>.py -h` for help.
+Run `python -m degmo.test_<model> -h` for help.

@@ -11,6 +11,8 @@ from degmo.utils import setup_seed, select_gpus, nats2bits, config_dataset, load
 from degmo import LOGDIR, MODELDIR, VERSION, CONFIG_PATH
 
 CONFIG = os.path.join(CONFIG_PATH, 'gan.json')
+LOGDIR = os.path.join(LOGDIR, 'gan')
+MODELDIR = os.path.join(MODELDIR, 'gan')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

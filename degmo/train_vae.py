@@ -12,6 +12,8 @@ from degmo.utils import setup_seed, select_gpus, nats2bits, config_dataset, load
 from degmo import LOGDIR, MODELDIR, VERSION, CONFIG_PATH
 
 CONFIG = os.path.join(CONFIG_PATH, 'vae.json')
+LOGDIR = os.path.join(LOGDIR, 'vae')
+MODELDIR = os.path.join(MODELDIR, 'vae')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

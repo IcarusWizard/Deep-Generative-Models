@@ -7,7 +7,7 @@ import pickle, torch, math, random, os, json
 import PIL.Image as Image
 
 import degmo
-from degmo.datasets import make_dataset
+from degmo.data import make_dataset
 
 LOG2PI = 0.5 * np.log(2 * np.pi)
 
