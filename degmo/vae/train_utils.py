@@ -7,30 +7,31 @@ from tqdm import tqdm
 from ..utils import step_loader, nats2bits
 
 def config_model(args, model_param):
-    if args.model == 'VAE':
-        model_param.update({
-            "latent_dim" : args.latent_dim,
+    model_param['network_type'] = args.network_type
+
+    if args.network_type == 'mlp':
+        model_param['config'] = {
             "features" : args.features, 
             "hidden_layers" : args.hidden_layers,
-            "output_type" : args.output_type,
-            "use_mce" : args.use_mce,
-        })
-        model = VAE(**model_param)        
-    elif args.model == 'CONV-VAE':
-        model_param.update({
-            "latent_dim" : args.latent_dim,
+        }
+    elif args.network_type == 'conv':
+        model_param['config'] = {
             "features" : args.features, 
             "down_sampling" : args.down_sampling,
             "res_layers" : args.hidden_layers,
+        }         
+
+    if args.model == 'VAE':
+        model_param.update({
+            "latent_dim" : args.latent_dim,
             "output_type" : args.output_type,
             "use_mce" : args.use_mce,
-        })        
-        model = CONV_VAE(**model_param)
+        })       
+
+        model = VAE(**model_param)   
     elif args.model == 'FVAE':
         model_param.update({
             "latent_dim" : args.latent_dim,
-            "features" : args.features, 
-            "hidden_layers" : args.hidden_layers,
             "flow_features" : args.flow_features,
             "flow_hidden_layers" : args.flow_hidden_layers,
             "flow_num_transformation" : args.flow_num_transformation,
@@ -78,6 +79,9 @@ def train_vae(model, optim, writer, train_loader, val_loader, test_loader, args)
 
                 imgs = torch.clamp(model.sample(64, deterministic=True), 0, 1)
                 writer.add_images('samples', imgs, global_step=step)
+                input_imgs = batch[:64]
+                writer.add_images('inputs', input_imgs, global_step=step)
+                writer.add_images('reconstructions', torch.clamp(model.decode(model.encode(input_imgs)), 0, 1), global_step=step)
 
             step = step + 1
             timer.update(1)

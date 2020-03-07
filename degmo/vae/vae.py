@@ -2,30 +2,27 @@ import torch
 from torch.functional import F
 import numpy as np
 
-from ..modules import MLP, Flatten, Unflatten
+from .modules import MLPEncoder, MLPDecoder, ConvEncoder, ConvDecoder
 from .utils import get_kl, LOG2PI
 
 class VAE(torch.nn.Module):
-    def __init__(self, c=3, h=32, w=32, latent_dim=2, features=128, hidden_layers=5, 
+    def __init__(self, c=3, h=32, w=32, latent_dim=2, network_type='conv', config={}, 
                  output_type='fix_std', use_mce=False):
         super().__init__()
         self.latent_dim = latent_dim
         self.output_type = output_type
         self.use_mce = use_mce
         self.input_dim = c * h * w
-
-        self.encoder = torch.nn.Sequential(
-            Flatten(),
-            MLP(self.input_dim, 2 * latent_dim, features, hidden_layers),
-        )
-
-        output_dim = self.input_dim * 2 if self.output_type == 'gauss' else self.input_dim
         output_c = 2 * c if self.output_type == 'gauss' else c
-        
-        self.decoder = torch.nn.Sequential(
-            MLP(latent_dim, output_dim, features, hidden_layers),
-            Unflatten(output_c, h, w),
-        )
+
+        if network_type == 'mlp':
+            self.encoder = MLPEncoder(c, h, w, latent_dim, **config)
+            self.decoder = MLPDecoder(output_c, h, w, latent_dim, **config)
+        elif network_type == 'conv':
+            self.encoder = ConvEncoder(c, h, w, latent_dim, **config)
+            self.decoder = ConvDecoder(output_c, h, w, latent_dim, **config)
+        else:
+            raise ValueError('unsupport network type: {}'.format(network_type))
         
         self.prior = torch.distributions.Normal(0, 1)
 
@@ -33,7 +30,7 @@ class VAE(torch.nn.Module):
         mu, logs = torch.chunk(self.encoder(x), 2, dim=1)
 
         # reparameterize trick
-        epsilon = torch.randn(*logs.shape, device=x.device)
+        epsilon = torch.randn_like(logs)
         z = mu + epsilon * torch.exp(logs)
 
         # compute kl divergence

@@ -20,20 +20,21 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', type=str, default='mnist',
                         help='choose from bmnist, mnist, svhn, cifar, celeba32, celeba64, celeba128')
     parser.add_argument('--model', type=str, default='VAE',
-                        help='choose from VAE, CONV-VAE, FVAE, VQ-VAE')
+                        help='choose from VAE, FVAE, VQ-VAE')
     parser.add_argument('--custom', action='store_true', help='enable custom config')
 
     model_parser = parser.add_argument_group('model', 'parameters for model config')
     model_parser.add_argument('--latent_dim', type=int, default=2)
+    model_parser.add_argument('--output_type', type=str, default='gauss',
+                              help='the output mode for vae decoder, choose from fix_std, gauss, bernoulli')
+    model_parser.add_argument('--use_mce', action='store_true', help='use Mento Carlo Estimation to compute kl divergence')
+    model_parser.add_argument('--network_type', type=str, default='conv')
     model_parser.add_argument('--hidden_layers', type=int, default=5)
     model_parser.add_argument('--features', type=int, default=512)
     model_parser.add_argument('--flow_features', type=int, default=64)
     model_parser.add_argument('--flow_hidden_layers', type=int, default=3)
     model_parser.add_argument('--flow_num_transformation', type=int, default=3)
     model_parser.add_argument('--down_sampling', type=int, default=2)
-    model_parser.add_argument('--output_type', type=str, default='gauss',
-                              help='the output mode for vae decoder, choose from fix_std, gauss, bernoulli')
-    model_parser.add_argument('--use_mce', action='store_true', help='use Mento Carlo Estimation to compute kl divergence')
 
     train_parser = parser.add_argument_group('training', "parameters for training config")
     train_parser.add_argument('--seed', type=int, default=None, help='manuall random seed')

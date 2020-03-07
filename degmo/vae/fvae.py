@@ -3,28 +3,25 @@ from torch.functional import F
 import numpy as np
 
 from degmo.flow.distribution import FlowDistribution1D
-from ..modules import MLP, Flatten, Unflatten
+from .modules import MLPEncoder, MLPDecoder, ConvEncoder, ConvDecoder
 from .utils import get_kl, LOG2PI
 
 class FVAE(torch.nn.Module):
-    def __init__(self, c=3, h=32, w=32, latent_dim=2, features=128, hidden_layers=5, 
+    def __init__(self, c=3, h=32, w=32, latent_dim=2, network_type='conv', config={},  
                  flow_hidden_layers=3, flow_features=64, flow_num_transformation=3):
         super().__init__()
         self.latent_dim = latent_dim
         self.input_dim = c * h * w
-
-        self.encoder = torch.nn.Sequential(
-            Flatten(),
-            MLP(self.input_dim, 2 * latent_dim, features, hidden_layers),
-        )
-
-        output_dim = self.input_dim * 2 
         output_c = 2 * c
-        
-        self.decoder = torch.nn.Sequential(
-            MLP(latent_dim, output_dim, features, hidden_layers),
-            Unflatten(output_c, h, w),
-        )
+
+        if network_type == 'mlp':
+            self.encoder = MLPEncoder(c, h, w, latent_dim, **config)
+            self.decoder = MLPDecoder(output_c, h, w, latent_dim, **config)
+        elif network_type == 'conv':
+            self.encoder = ConvEncoder(c, h, w, latent_dim, **config)
+            self.decoder = ConvDecoder(output_c, h, w, latent_dim, **config)
+        else:
+            raise ValueError('unsupport network type: {}'.format(network_type))
         
         self.prior = FlowDistribution1D(latent_dim, flow_num_transformation, flow_features, flow_hidden_layers)
 
