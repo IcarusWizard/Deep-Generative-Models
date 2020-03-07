@@ -39,12 +39,14 @@ def load_mnist(normalize=False):
     train_dataset, val_dataset = torch.utils.data.random_split(train_dataset, (55000, 5000))
     return (train_dataset, val_dataset, test_dataset, config)
 
-def load_bmnist():
+def load_bmnist(normalize=False):
     config = {
         "c" : 1,
         "h" : 28,
         "w" : 28,
     }
+
+    assert not normalize, "bmnist do not support normalize operation"
 
     transform = torchvision.transforms.Compose([
         torchvision.transforms.ToTensor(),
