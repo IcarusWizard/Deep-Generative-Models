@@ -21,7 +21,8 @@ setup(
         'moviepy',
         'matplotlib',
         'tb_nightly',
-        'tqdm'
+        'tqdm',
+        'pandas'
     ],
     description="Collection of PyTorch implementation for several deep generative models.",
     author="Xingyuan Zhang",
