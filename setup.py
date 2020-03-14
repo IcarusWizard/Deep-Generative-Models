@@ -26,4 +26,6 @@ setup(
     ],
     description="Collection of PyTorch implementation for several deep generative models.",
     author="Xingyuan Zhang",
+    author_email="wizardicarus@gmail.com",
+    url="https://github.com/IcarusWizard/Deep-Generative-Models"
 )
