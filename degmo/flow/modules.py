@@ -5,6 +5,7 @@ from torch.nn import Parameter, init
 import matplotlib.pyplot as plt
 import pickle, torch, math, random, os
 import PIL.Image as Image
+import re
 
 from .utils import build_chessboard_mask, build_channel_mask, LOG2PI, unsqueeze, squeeze
 from ..modules import Flatten, Unflatten, MLP, ResBlock, ResNet
@@ -114,8 +115,9 @@ class AffineCoupling1D(torch.nn.Module):
         if zero_init:
             with torch.no_grad():
                 state_dict = self.coupling.state_dict()
-                state_dict['net.{}.weight'.format(hidden_layers+1)].fill_(0)
-                state_dict['net.{}.bias'.format(hidden_layers+1)].fill_(0)
+                num = max(map(lambda s: int(re.findall(r'(\d+)', s)[0]), state_dict))
+                state_dict['net.{}.weight'.format(num)].fill_(0)
+                state_dict['net.{}.bias'.format(num)].fill_(0)
         
     def forward(self, x):
         x1, x2 = torch.chunk(x, 2, dim=1)
