@@ -15,10 +15,18 @@ def config_model(args, model_param):
         }
     elif args.network_type == 'conv':
         model_param['config'] = {
-            "features" : args.features, 
+            "conv_features" : args.conv_features,
             "down_sampling" : args.down_sampling,
-            "res_layers" : args.hidden_layers,
-        }         
+            "batchnorm" : args.use_batchnorm,
+            "mlp_features" : args.features,
+            "mlp_layers" : args.hidden_layers,
+        } 
+
+        assert len(args.res_layers) == 1 or len(args.res_layers) == args.down_sampling
+        if len(args.res_layers) == 1:
+            model_param['config']['res_layers'] = args.res_layers * args.down_sampling
+        else:
+            model_param['config']['res_layers'] = args.res_layers       
 
     if args.model == 'VAE':
         model_param.update({

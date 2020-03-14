@@ -6,8 +6,22 @@ from .modules import MLPEncoder, MLPDecoder, ConvEncoder, ConvDecoder
 from .utils import get_kl, LOG2PI
 
 class VAE(torch.nn.Module):
+    r"""
+        Variational Auto-Encoder: http://arxiv.org/abs/1312.6114
+        
+        Inputs:
+
+            c : int, channel of the input image
+            h : int, height of the input image
+            w : int, width of the input image
+            latent_dim : int, dimension of the latent variable
+            network_type : str, type of the encoder and decoder, choose from conv and mlp, default: conv
+            config : dict, parameters for constructe encoder and decoder
+            output_type : str, type of the distribution p(x|z), choose from fix_std(std=1), gauss and bernoulli, default: gauss
+            use_mce : bool, whether to compute KL by Mento Carlo Estimation, default: False
+    """
     def __init__(self, c=3, h=32, w=32, latent_dim=2, network_type='conv', config={}, 
-                 output_type='fix_std', use_mce=False):
+                 output_type='gauss', use_mce=False):
         super().__init__()
         self.latent_dim = latent_dim
         self.output_type = output_type

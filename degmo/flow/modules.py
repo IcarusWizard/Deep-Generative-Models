@@ -14,7 +14,7 @@ class Reshape(torch.nn.Module):
     def __init__(self, c, h, w):
         super().__init__()
         self.flatten = Flatten()
-        self.unflatten = Unflatten(c, h, w)
+        self.unflatten = Unflatten([c, h, w])
 
     def forward(self, x):
         return self.flatten(x)
@@ -114,8 +114,8 @@ class AffineCoupling1D(torch.nn.Module):
         if zero_init:
             with torch.no_grad():
                 state_dict = self.coupling.state_dict()
-                state_dict['end.weight'].fill_(0)
-                state_dict['end.bias'].fill_(0)
+                state_dict['net.{}.weight'.format(hidden_layers+1)].fill_(0)
+                state_dict['net.{}.bias'.format(hidden_layers+1)].fill_(0)
         
     def forward(self, x):
         x1, x2 = torch.chunk(x, 2, dim=1)

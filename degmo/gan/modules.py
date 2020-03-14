@@ -6,6 +6,7 @@ from torch import nn
 import matplotlib.pyplot as plt
 import pickle, torch, math, random, os
 import PIL.Image as Image
+from functools import partial
 
 from ..modules import Flatten, Unflatten, MLP
 
@@ -27,7 +28,7 @@ class MLPGenerator(torch.nn.Module):
 
         self.generator = torch.nn.Sequential(
             MLP(latent_dim, self.input_size, features, layers),
-            Unflatten(c, h, w),
+            Unflatten([c, h, w]),
             torch.nn.Tanh(),
         )
 
@@ -42,7 +43,7 @@ class MLPDiscriminator(torch.nn.Module):
 
         self.discriminator = torch.nn.Sequential(
             Flatten(),
-            MLP(self.input_size, 1, features, layers, lambda x: F.leaky_relu(x, 0.01)),
+            MLP(self.input_size, 1, features, layers, partial(torch.nn.LeakyReLU, negative_slope=0.01)),
         )
 
     def forward(self, x):
@@ -58,7 +59,7 @@ class ConvGenerator(torch.nn.Module):
         out_features = features
 
         generator.append(torch.nn.Linear(latent_dim, out_features * 4 * 4, bias=False))
-        generator.append(Unflatten(out_features, 4, 4))
+        generator.append(Unflatten([out_features, 4, 4]))
         
         for i in range(downsampling - 1):
             if use_norm:
