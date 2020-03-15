@@ -48,12 +48,12 @@ class VQ_VAE(torch.nn.Module):
         batch_size = x.shape[0]
         z_e = self.encoder(x) # encoder to latent space
 
-        z_q, argmin = self.embedding(z_e, weight_sg=True) # find the nearest embedding
+        z_q, argmin = self.embedding(z_e) # find the nearest embedding
 
-        emb, _ = self.embedding(z_e.detach()) # use to compute gradient
+        vq_loss = torch.mean(torch.sum((z_q - z_e.detach()) ** 2, dim=(1, 2)))
+        commit_loss = torch.mean(torch.sum((z_q.detach() - z_e) ** 2, dim=(1, 2)))
 
-        vq_loss = torch.mean(torch.sum(torch.norm((emb - z_e.detach()), 2, 1), dim=(1, 2)))
-        commit_loss = torch.mean(torch.sum(torch.norm((emb.detach() - z_e), 2, 1), dim=(1, 2)))
+        z_q = z_e + (z_q - z_e).detach() # this trick provides gradient to the encoder
 
         if self.output_type == 'fix_std':
             _x = self.decoder(z_q)
@@ -62,7 +62,7 @@ class VQ_VAE(torch.nn.Module):
         elif self.output_type == 'gauss':
             output_mu, logs = torch.chunk(self.decoder(z_q), 2, 1)
             logs = torch.tanh(logs)
-            reconstruction_loss = torch.mean(torch.mean((x - output_mu) ** 2 / 2 * torch.exp(-2 * logs) + LOG2PI + logs, dim=(1, 2, 3)))
+            reconstruction_loss = torch.mean(torch.sum((x - output_mu) ** 2 / 2 * torch.exp(-2 * logs) + LOG2PI + logs, dim=(1, 2, 3)))
 
         info = {
             "resonstraction_loss" : reconstruction_loss, 
@@ -75,7 +75,7 @@ class VQ_VAE(torch.nn.Module):
     def encode(self, x):
         z_e = self.encoder(x) # encoder to latent space
 
-        z_q, argmin = self.embedding(z_e, weight_sg=True)
+        z_q, argmin = self.embedding(z_e)
 
         return z_q
     
@@ -90,6 +90,6 @@ class VQ_VAE(torch.nn.Module):
         return result
 
     def sample(self, num, deterministic=True):
-        index = torch.randint(self.k, size=(num, *self.latent_shape))
-        z = self.embedding.select(index).permute(0, 3, 1, 2)
+        index = torch.randint(self.k, size=(num, *self.latent_shape)).to(self.embedding.weight.device)
+        z = self.embedding.select(index).permute(0, 3, 1, 2).contiguous()
         return self.decode(z, deterministic=deterministic)

@@ -130,73 +130,6 @@ class FullConvDecoder(torch.nn.Module):
     def forward(self, x):
         return self.decoder(x)
 
-class NearestEmbedFunc(torch.autograd.Function):
-    r"""
-        Gradient function that perform nearest embedding
-
-        Input:
-
-            x : tensor[batch_size, d, *] (* can be arbitrary)
-            emb : tensor[k, d], embedding vectors
-        """
-    @staticmethod
-    def forward(ctx, x, emb):
-        if x.size(1) != emb.size(0):
-            raise RuntimeError('invalid argument: x.size(1) ({}) must be equal to emb.size(0) ({})'.
-                               format(x.size(1), emb.size(0)))
-
-        # save sizes for backward
-        ctx.batch_size = x.size(0)
-        ctx.num_latents = int(np.prod(x.shape[2:]))
-        ctx.emb_dim = emb.size(0)
-        ctx.num_emb = emb.size(1)
-        ctx.input_type = type(x)
-        ctx.dims = list(range(len(x.size())))
-
-        # expand so it broadcastable
-        x_expanded = x.unsqueeze(-1)
-        num_arbitrary_dims = len(ctx.dims) - 2
-        if num_arbitrary_dims:
-            emb_expanded = emb.view(emb.shape[0], *([1] * num_arbitrary_dims), emb.shape[1])
-        else:
-            emb_expanded = emb
-
-        # find nearest neighbors
-        dist = torch.norm(x_expanded - emb_expanded, 2, dim=1)
-        _, argmin = dist.min(-1)
-        shifted_shape = [x.shape[0], *list(x.shape[2:]), x.shape[1]]
-        result = emb.t().index_select(0, argmin.view(-1)).view(shifted_shape).permute(0, ctx.dims[-1], *ctx.dims[1:-1])
-
-        ctx.save_for_backward(argmin) 
-        return result.contiguous(), argmin
-
-    @staticmethod
-    def backward(ctx, grad_output, argmin=None):
-        grad_input = grad_emb = None
-
-        if ctx.needs_input_grad[0]:
-            # copy the output gradient for the input
-            grad_input = grad_output
-
-        if ctx.needs_input_grad[1]:
-            # accumulate the gradient for every selected embedding vector
-            argmin, = ctx.saved_tensors
-            latent_indices = torch.arange(ctx.num_emb).type_as(argmin)
-            # idx_choices = (argmin.view(-1, 1) == latent_indices.view(1, -1)).type_as(grad_output.data)
-            idx_choices = (argmin.view(-1, 1) == latent_indices.view(1, -1)).type_as(grad_output)
-            n_idx_choice = idx_choices.sum(0) # the times of e_d choosed in this minibatch
-            n_idx_choice[n_idx_choice == 0] = 1
-            idx_avg_choices = idx_choices / n_idx_choice # weight of every choice
-            grad_output = grad_output.permute(0, *ctx.dims[2:], 1).contiguous()
-            grad_output = grad_output.view(ctx.batch_size * ctx.num_latents, ctx.emb_dim)
-            # grad_emb = torch.sum(grad_output.data.view(-1, ctx.emb_dim, 1) * idx_avg_choices.view(-1, 1, ctx.num_emb), 0)
-            grad_emb = torch.sum(grad_output.unsqueeze(-1) * idx_avg_choices.unsqueeze(1), 0)
-
-        return (grad_input, grad_emb, )
-
-def nearest_embed(x, emb):
-    return NearestEmbedFunc.apply(x, emb)
-
 class NearestEmbed(torch.nn.Module):
     r"""
         Embedding Module for VQ-VAE
@@ -213,14 +146,36 @@ class NearestEmbed(torch.nn.Module):
         self.weight = torch.nn.Parameter(torch.rand(d, k))
         self.weight.data.uniform_(-1./k, 1./k)
 
-    def forward(self, x, weight_sg=False):
+    def forward(self, x):
         r"""
             Inputs:
 
-                x : tensor[batch_size, d, *] (* can be arbitrary)
-                weight_sg : bool, whether the operation create a gradient for embedding vectors
+                x : tensor[batch_size, d, *] (* can be arbitrary)]
+
+            Outputs:
+
+                quantized_x : tensor[batch_size, d, *]
+                index : tensor[batch_size, d], the index of selected embedding vectors 
         """
-        return nearest_embed(x, self.weight.detach() if weight_sg else self.weight)
+        batch_size = x.shape[0]
+        num_latents = int(np.prod(x.shape[2:]))
+        dims = list(range(len(x.size())))
+
+        # expand so it broadcastable
+        x_expanded = x.unsqueeze(-1)
+        num_arbitrary_dims = len(dims) - 2
+        if num_arbitrary_dims:
+            emb_expanded = self.weight.view(self.d, *([1] * num_arbitrary_dims), self.k)
+        else:
+            emb_expanded = self.weight
+
+        # find nearest neighbors
+        dist = torch.norm(x_expanded - emb_expanded, 2, dim=1)
+        _, argmin = dist.min(-1)
+        shifted_shape = [x.shape[0], *list(x.shape[2:]), x.shape[1]]
+        quantized = self.weight.t().index_select(0, argmin.view(-1)).view(shifted_shape).permute(0, dims[-1], *dims[1:-1])
+
+        return quantized.contiguous(), argmin
 
     def select(self, index):
         r"""
@@ -237,4 +192,3 @@ class NearestEmbed(torch.nn.Module):
         """
         shape = index.shape
         return self.weight.t().index_select(0, index.view(-1)).view(*shape, self.d)
-        

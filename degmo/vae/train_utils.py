@@ -85,15 +85,15 @@ def train_vae(model, optim, writer, train_loader, val_loader, test_loader, args)
                 print('In Step {}'.format(step))
                 print('-' * 15)
                 print('In training set:')
-                print('NELOB is {0:{1}} bits'.format(nats2bits(loss.item()), '.5f'))
+                print('NELBO is {0:{1}} bits'.format(nats2bits(loss.item()), '.5f'))
                 for k in info.keys():
                     print('{0} is {1:{2}} bits'.format(k, nats2bits(info[k].item()), '.5f'))
                 print('In validation set:')
-                print('NELOB is {0:{1}} bits'.format(nats2bits(val_loss.item()), '.5f'))
+                print('NELBO is {0:{1}} bits'.format(nats2bits(val_loss.item()), '.5f'))
                 for k in val_info.keys():
                     print('{0} is {1:{2}} bits'.format(k, nats2bits(val_info[k].item()), '.5f'))
 
-                writer.add_scalars('NELOB', {'train' : nats2bits(loss.item()), 
+                writer.add_scalars('NELBO', {'train' : nats2bits(loss.item()), 
                                              'val' : nats2bits(val_loss.item())}, global_step=step)
                 for k in info.keys():
                     writer.add_scalars(k, {'train' : nats2bits(info[k].item()), 
@@ -114,7 +114,7 @@ def train_vae(model, optim, writer, train_loader, val_loader, test_loader, args)
 
     test_loss, test_info = test_vae(model, test_loader)
     print('In test set:')
-    print('NELOB is {0:{1}} bits'.format(nats2bits(test_loss.item()), '.5f'))
+    print('NELBO is {0:{1}} bits'.format(nats2bits(test_loss.item()), '.5f'))
     for k in test_info.keys():
         print('{0} is {1:{2}} bits'.format(k, nats2bits(test_info[k].item()), '.5f'))
 
