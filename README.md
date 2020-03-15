@@ -28,7 +28,7 @@ pip install -e .
   - [x] [Glow](http://arxiv.org/abs/1807.03039)
 * VAE
   * [x] [Vanilla VAE](http://arxiv.org/abs/1312.6114)
-  * [ ] [VQ-VAE](http://arxiv.org/abs/1711.00937)
+  * [x] [VQ-VAE](http://arxiv.org/abs/1711.00937)
 * GAN
   * [x] [Vanilla GAN](https://arxiv.org/abs/1406.2661)
   * [x] [DCGAN](https://arxiv.org/abs/1511.06434)

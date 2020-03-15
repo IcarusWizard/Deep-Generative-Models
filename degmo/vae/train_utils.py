@@ -1,5 +1,6 @@
 from .vae import VAE
 from .fvae import FVAE
+from .vqvae import VQ_VAE
 import torch
 from tqdm import tqdm
 
@@ -13,14 +14,21 @@ def config_model(args, model_param):
             "features" : args.features, 
             "hidden_layers" : args.hidden_layers,
         }
-    elif args.network_type == 'conv':
-        model_param['config'] = {
-            "conv_features" : args.conv_features,
-            "down_sampling" : args.down_sampling,
-            "batchnorm" : args.use_batchnorm,
-            "mlp_features" : args.features,
-            "mlp_layers" : args.hidden_layers,
-        } 
+    else:
+        if args.network_type == 'conv':
+            model_param['config'] = {
+                "conv_features" : args.conv_features,
+                "down_sampling" : args.down_sampling,
+                "batchnorm" : args.use_batchnorm,
+                "mlp_features" : args.features,
+                "mlp_layers" : args.hidden_layers,
+            } 
+        elif args.network_type == 'fullconv':
+            model_param['config'] = {
+                "conv_features" : args.conv_features,
+                "down_sampling" : args.down_sampling,
+                "batchnorm" : args.use_batchnorm,
+            } 
 
         assert len(args.res_layers) == 1 or len(args.res_layers) == args.down_sampling
         if len(args.res_layers) == 1:
@@ -33,6 +41,7 @@ def config_model(args, model_param):
             "latent_dim" : args.latent_dim,
             "output_type" : args.output_type,
             "use_mce" : args.use_mce,
+            "output_type" : args.output_type,
         })       
 
         model = VAE(**model_param)   
@@ -45,7 +54,13 @@ def config_model(args, model_param):
         })        
         model = FVAE(**model_param)
     elif args.model == 'VQ-VAE':
-        pass
+        model_param.update({
+            "k" : args.k,
+            "d" : args.d,
+            "beta" : args.beta,
+            "output_type" : args.output_type,
+        })     
+        model = VQ_VAE(**model_param)
     else:
         raise ValueError('Model {} is not supported!'.format(args.model))
 
