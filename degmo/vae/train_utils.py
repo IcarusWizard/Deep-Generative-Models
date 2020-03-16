@@ -54,6 +54,8 @@ def config_model(args, model_param):
         })        
         model = FVAE(**model_param)
     elif args.model == 'VQ-VAE':
+        if not args.network_type == 'fullconv':
+            model_param['config']['latent_dim'] = args.latent_dim
         model_param.update({
             "k" : args.k,
             "d" : args.d,

@@ -3,6 +3,7 @@ import numpy as np
 from torch import nn
 
 from ..modules import MLP, Flatten, Unflatten, ResNet, ResBlock
+from functools import partial
 
 class MLPEncoder(torch.nn.Module):
     def __init__(self, c, h, w, latent_dim, features, hidden_layers):
@@ -48,7 +49,7 @@ class ConvEncoder(torch.nn.Module):
                 encoder_list.append(ResBlock(conv_features, batchnorm))
 
         encoder_list.append(Flatten())
-        encoder_list.append(MLP(np.prod(feature_shape), 2 * latent_dim, mlp_features, mlp_layers))
+        encoder_list.append(MLP(np.prod(feature_shape), 2 * latent_dim, mlp_features, mlp_layers, partial(torch.nn.LeakyReLU, negative_slope=0.1)))
 
         self.encoder = torch.nn.Sequential(*encoder_list)
 
@@ -63,7 +64,7 @@ class ConvDecoder(torch.nn.Module):
         feature_shape = (conv_features, h // (2 ** down_sampling), w // (2 ** down_sampling))
 
         decoder_list = [
-            MLP(latent_dim, np.prod(feature_shape), mlp_features, mlp_layers),
+            MLP(latent_dim, np.prod(feature_shape), mlp_features, mlp_layers, partial(torch.nn.LeakyReLU, negative_slope=0.1)),
             Unflatten(feature_shape),
         ]
 
@@ -170,7 +171,7 @@ class NearestEmbed(torch.nn.Module):
             emb_expanded = self.weight
 
         # find nearest neighbors
-        dist = torch.norm(x_expanded - emb_expanded, 2, dim=1)
+        dist = torch.sum((x_expanded - emb_expanded) ** 2, dim=1)
         _, argmin = dist.min(-1)
         shifted_shape = [x.shape[0], *list(x.shape[2:]), x.shape[1]]
         quantized = self.weight.t().index_select(0, argmin.view(-1)).view(shifted_shape).permute(0, dims[-1], *dims[1:-1])
