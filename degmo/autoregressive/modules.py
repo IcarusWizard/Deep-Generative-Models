@@ -25,12 +25,6 @@ class RowLSTM(torch.nn.Module):
     def forward(self, x):
         h = self.i2s_conv(x)
 
-        # chunks = torch.chunk(h, 12, dim=1)
-        # o = torch.cat([chunks[i] for i in range(12) if i % 4 == 0], dim=1)
-        # f = torch.cat([chunks[i] for i in range(12) if i % 4 == 1], dim=1)
-        # i = torch.cat([chunks[i] for i in range(12) if i % 4 == 2], dim=1)
-        # g = torch.cat([chunks[i] for i in range(12) if i % 4 == 3], dim=1)
-        # h = torch.cat([o, f, i, g], dim=1)
         if self.group == 3:
             h = shuffle(h)
 
@@ -129,20 +123,20 @@ class MaskRes(torch.nn.Module):
         return x + self.skip_conv(x)
 
 class GatePixelCNNBlock(torch.nn.Module):
-    def __init__(self, in_dim, features, filter_size=3):
+    def __init__(self, in_dim, features, kernel_size=3):
         super().__init__()
 
         self.is_first = in_dim != features
 
-        padding = filter_size // 2
+        padding = kernel_size // 2
 
-        self.horizontal = MaskConv(in_dim, 2 * features, (1, filter_size),
-            build_horizontal_mask(in_dim, 2 * features, filter_size, self.is_first), padding=(0, padding))
+        self.horizontal = MaskConv(in_dim, 2 * features, (1, kernel_size),
+            build_horizontal_mask(in_dim, 2 * features, kernel_size, self.is_first), padding=(0, padding))
 
         self.horizontal_out = torch.nn.Conv2d(features, features, 1)
 
-        self.vertical = MaskConv(in_dim, 2 * features, filter_size,
-            build_vertical_mask(in_dim, 2 * features, filter_size, self.is_first), padding=padding)
+        self.vertical = MaskConv(in_dim, 2 * features, kernel_size,
+            build_vertical_mask(in_dim, 2 * features, kernel_size, self.is_first), padding=padding)
 
         self.trans = torch.nn.Conv2d(2 * features, 2 * features, 1)
 

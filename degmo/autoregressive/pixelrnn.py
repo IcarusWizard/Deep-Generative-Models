@@ -17,12 +17,13 @@ class PixelRNN(torch.nn.Module):
             h : int, height of the input image
             w : int, width of the input image
             mode : str, mode for convolution structure, choose from row and bi, default: row (NOTE: bi mode is quite slow)
+            first_kernel_size : int, kernel size of the first convolution, default : 7 (same as the paper)
             features : int, number of features in the rnn, (h in the paper)
             layers : int, number of stacked rnn blocks
             post_features : number of features in the convolutions after main blocks
             bits : int, information contained in each dimension, 2 ^ bits is equal to the categorical number
     """
-    def __init__(self, c, h, w, mode='row', features=16, layers=7, post_features=1024, bits=8):
+    def __init__(self, c, h, w, mode='row', first_kernel_size=7, features=16, layers=7, post_features=1024, bits=8):
         super().__init__()
         self.c = c
         self.h = h

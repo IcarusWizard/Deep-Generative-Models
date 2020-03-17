@@ -18,13 +18,14 @@ class PixelCNN(torch.nn.Module):
             h : int, height of the input image
             w : int, width of the input image
             mode : str, mode for convolution structure, choose from res and gate, default: res
+            first_kernel_size : int, kernel size of the first convolution, default : 7 (same as the paper)
             features : int, number of features in the convolutions, (h in the paper)
             layers : int, number of stacked convolution blocks
-            filter_size : int, filter size used in convolution layers
+            kernel_size : int, kernel size used in convolution layers
             post_features : number of features in the convolutions after main blocks
             bits : int, information contained in each dimension, 2 ^ bits is equal to the categorical number
     """
-    def __init__(self, c, h, w, mode='res', features=64, layers=7, filter_size=3, post_features=1024, bits=8):
+    def __init__(self, c, h, w, mode='res', first_kernel_size=7, features=64, layers=7, kernel_size=3, post_features=1024, bits=8):
         super().__init__()
         self.c = c
         self.h = h
@@ -51,7 +52,7 @@ class PixelCNN(torch.nn.Module):
                     build_maskB(post_features, output_channels, (1, 1), group=c))          
             )
         else:
-            self.blocks = torch.nn.ModuleList([GatePixelCNNBlock(c if i == 0 else features, features, filter_size) for i in range(layers)])
+            self.blocks = torch.nn.ModuleList([GatePixelCNNBlock(c if i == 0 else features, features, kernel_size) for i in range(layers)])
 
             self.output_conv = torch.nn.Sequential(
                 torch.nn.Conv2d(features, post_features, 1),

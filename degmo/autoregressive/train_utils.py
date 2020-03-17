@@ -24,7 +24,7 @@ def config_model(args, model_param):
             "features" : args.features,
             "layers" : args.layers,
             "bits" : args.bits,
-            "filter_size" : args.filter_size,
+            "kernel_size" : args.kernel_size,
             "post_features" : args.post_features,
             "bits" : args.bits,
         })
