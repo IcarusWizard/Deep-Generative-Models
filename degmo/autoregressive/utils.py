@@ -6,6 +6,17 @@ import matplotlib.pyplot as plt
 import pickle, torch, math, random
 
 def build_maskA(in_channels, out_channels, kernal_size, group=3):
+    r"""
+        Build mask for convolution kernel.  
+        Type A: only depend on its context.
+
+        Inputs:
+
+            in_channels : int
+            out_channels : int
+            kernel_size : int
+            group : int, group of features, 3 for RGB image, 1 for monochrome image
+    """
     mask = np.ones((in_channels, out_channels, *kernal_size))
     mid_row = kernal_size[0] // 2
     mid_col = kernal_size[1] // 2
@@ -21,7 +32,7 @@ def build_maskA(in_channels, out_channels, kernal_size, group=3):
         mask[:in_group, :out_group, mid_row, mid_col] = 0 # R
         mask[in_group:2*in_group, :2*out_group, mid_row, mid_col] = 0 # G
         mask[2*in_group:, :, mid_row, mid_col] = 0 # B
-    elif group == 1: # for mnist
+    elif group == 1:
         mask[:, :, mid_row, mid_col] = 0
 
     mask = np.transpose(mask, (1, 0, 2, 3))
@@ -29,6 +40,17 @@ def build_maskA(in_channels, out_channels, kernal_size, group=3):
     return mask
 
 def build_maskB(in_channels, out_channels, kernal_size, group=3):
+    r"""
+        Build mask for convolution kernel.  
+        Type B: depend on its context and itself.
+
+        Inputs:
+
+            in_channels : int
+            out_channels : int
+            kernel_size : int
+            group : int, group of features, 3 for RGB image, 1 for monochrome image
+    """
     mask = np.ones((in_channels, out_channels, *kernal_size))
     mid_row = kernal_size[0] // 2
     mid_col = kernal_size[1] // 2
@@ -43,7 +65,7 @@ def build_maskB(in_channels, out_channels, kernal_size, group=3):
         # mask channels
         mask[in_group:2*in_group, :out_group, mid_row, mid_col] = 0 # G
         mask[2*in_group:, :2*out_group, mid_row, mid_col] = 0 # B
-    elif group == 1: # for mnist
+    elif group == 1:
         pass
 
     mask = np.transpose(mask, (1, 0, 2, 3))
@@ -77,11 +99,14 @@ def build_vertical_mask(in_channels, out_channels, kernal_size, first=False):
     return mask        
 
 def shuffle(h):
-    # NOTE: This is a wired operation!
-    #|           r           |           g           |           b           |
-    #| o_r | f_r | i_r | g_r | o_g | f_g | i_g | g_g | o_b | f_b | i_b | g_b |
-    #| o_r | o_g | o_b | f_r | f_g | f_b | i_r | i_g | i_b | g_r | g_g | g_b |
-    #|        o        |        f        |        i        |        g        |
+    r"""
+        NOTE: This is a wired operation!
+
+            |           r           |           g           |           b           |
+            | o_r | f_r | i_r | g_r | o_g | f_g | i_g | g_g | o_b | f_b | i_b | g_b |
+            | o_r | o_g | o_b | f_r | f_g | f_b | i_r | i_g | i_b | g_r | g_g | g_b |
+            |        o        |        f        |        i        |        g        |
+    """
     chunks = torch.chunk(h, 12, dim=1)
     o = torch.cat([chunks[i] for i in range(12) if i % 4 == 0], dim=1)
     f = torch.cat([chunks[i] for i in range(12) if i % 4 == 1], dim=1)

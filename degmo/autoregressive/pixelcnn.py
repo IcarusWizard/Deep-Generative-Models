@@ -1,21 +1,40 @@
 import torch
 from torch.functional import F
+import numpy as np
 
 from .modules import MaskConv, MaskRes, GatePixelCNNBlock
 from .utils import build_maskA, build_maskB
 
 class PixelCNN(torch.nn.Module):
+    """
+        PixelCNN: 
+
+            http://arxiv.org/abs/1601.06759
+            http://arxiv.org/abs/1606.05328
+
+        Inputs:
+
+            c : int, channel of the input image
+            h : int, height of the input image
+            w : int, width of the input image
+            mode : str, mode for convolution structure, choose from res and gate, default: res
+            features : int, number of features in the convolutions, (h in the paper)
+            layers : int, number of stacked convolution blocks
+            filter_size : int, filter size used in convolution layers
+            post_features : number of features in the convolutions after main blocks
+            bits : int, information contained in each dimension, 2 ^ bits is equal to the categorical number
+    """
     def __init__(self, c, h, w, mode='res', features=64, layers=7, filter_size=3, post_features=1024, bits=8):
         super().__init__()
         self.c = c
         self.h = h
         self.w = w
         self.bits = bits
+        self.k = int(np.round(2 ** bits))
         self.mode = mode
 
-        output_channels = c * (2 ** bits) if bits != 1 else c
+        output_channels = c * self.k
         if self.mode == 'res':
-            real_feature = 2 * features
             self.input_conv = MaskConv(c, c * 2 * features, (7, 7), 
                 build_maskA(c, c * 2 * features, (7, 7), group=c), padding=(3, 3))
 
@@ -44,18 +63,15 @@ class PixelCNN(torch.nn.Module):
 
     def forward(self, x):        
         # build target
-        target = (x * (2 ** self.bits - 1)).long()
+        target = (x * (self.k - 1)).long()
 
         # compute conditional distributions
         distribution = self.get_distribution(x)
 
-        if self.bits == 1: # bmnist
-            log_likelihood = - F.binary_cross_entropy(distribution, target.float())
-        else:
-            log_likelihood = 0
-            for i in range(3):
-                log_likelihood -= F.nll_loss(distribution[i], target[:, i])
-            log_likelihood /= 3
+        log_likelihood = 0
+        for i in range(self.c):
+            log_likelihood -= F.nll_loss(distribution[i], target[:, i])
+        log_likelihood /= self.c
 
         return - log_likelihood
 
@@ -66,22 +82,18 @@ class PixelCNN(torch.nn.Module):
 
         for i in range(self.h):
             for j in range(self.w):
-                if self.bits == 1: # bmnist
-                    distribution = self.get_distribution(x)
-                    sample = (torch.rand(num_samples, device=device, dtype=dtype) < distribution[:, 0, i, j]).float()
-                    x[:, 0, i, j] = sample
+                if self.mode == 'res':
+                    for k in range(self.c):
+                        distribution = self.get_distribution(x)
+                        distribution = torch.exp(distribution[k])
+                        sample = torch.multinomial(distribution[:, :, i, j], 1)
+                        x[:, k, i, j] = sample.view(-1).float() / (self.k - 1)
                 else:
-                    if self.mode == 'res':
-                        for k in range(self.c):
-                            distribution = self.get_distribution(x)
-                            distribution = torch.exp(distribution[k])
-                            sample = torch.multinomial(distribution[:, :, i, j], 1)
-                            x[:, k, i, j] = sample.view(-1).float() / (2 ** self.bits - 1)
-                    else:
-                        for k in range(self.c):
-                            _distribution = torch.exp(distribution[k])
-                            sample = torch.multinomial(_distribution[:, :, i, j], 1)
-                            x[:, k, i, j] = sample.view(-1).float() / (2 ** self.bits - 1)
+                    distribution = self.get_distribution(x)
+                    for k in range(self.c):
+                        _distribution = torch.exp(distribution[k])
+                        sample = torch.multinomial(_distribution[:, :, i, j], 1)
+                        x[:, k, i, j] = sample.view(-1).float() / (self.k - 1)
 
         return x
 
@@ -101,7 +113,4 @@ class PixelCNN(torch.nn.Module):
 
             output = self.output_conv(horizontal)
 
-        if self.bits == 1: # bmnist
-            return torch.sigmoid(output)
-        else:
-            return [F.log_softmax(chunk, dim=1) for chunk in torch.chunk(output, 3, dim=1)]
+        return [F.log_softmax(chunk, dim=1) for chunk in torch.chunk(output, self.c, dim=1)]
