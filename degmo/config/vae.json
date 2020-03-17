@@ -254,7 +254,7 @@
             "batch_size" : 32,
             "gpu" : "0",
             "workers" : 4,
-            "steps" : 100000,
+            "steps" : 200000,
             "lr" : 1e-3,
             "beta1" : 0.9,
             "beta2" : 0.999,

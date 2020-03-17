@@ -100,13 +100,14 @@ def train_vae(model, optim, writer, train_loader, val_loader, test_loader, args)
                 for k in info.keys():
                     writer.add_scalars(k, {'train' : nats2bits(info[k].item()), 
                                            'val' : nats2bits(val_info[k].item())}, global_step=step)
-
-                imgs = torch.clamp(model.sample(64, deterministic=True), 0, 1)
-                writer.add_images('samples', imgs, global_step=step)
-                input_imgs = batch[:32]
-                reconstructions = torch.clamp(model.decode(model.encode(input_imgs)), 0, 1)
-                inputs_and_reconstructions = torch.stack([input_imgs, reconstructions], dim=1).view(input_imgs.shape[0] * 2, *input_imgs.shape[1:])
-                writer.add_images('inputs_and_reconstructions', inputs_and_reconstructions, global_step=step)
+                
+                with torch.no_grad():
+                    imgs = torch.clamp(model.sample(64, deterministic=True), 0, 1)
+                    writer.add_images('samples', imgs, global_step=step)
+                    input_imgs = batch[:32]
+                    reconstructions = torch.clamp(model.decode(model.encode(input_imgs)), 0, 1)
+                    inputs_and_reconstructions = torch.stack([input_imgs, reconstructions], dim=1).view(input_imgs.shape[0] * 2, *input_imgs.shape[1:])
+                    writer.add_images('inputs_and_reconstructions', inputs_and_reconstructions, global_step=step)
 
             step = step + 1
             timer.update(1)

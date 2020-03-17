@@ -4,6 +4,7 @@ from torch.functional import F
 import numpy as np
 from torch import nn
 
+from degmo.autoregressive.pixelcnn import PixelCNN
 from .modules import FullConvEncoder, FullConvDecoder, ConvEncoder, ConvDecoder, MLPEncoder, MLPDecoder, \
     Flatten, Unflatten, NearestEmbed
 from .utils import LOG2PI
@@ -65,12 +66,19 @@ class VQ_VAE(torch.nn.Module):
             sample_output = self.encoder(sample_data)
             self.latent_shape = sample_output.shape[2:]
 
+        if self.network_type == 'fullconv':
+            self.prior = PixelCNN(1, self.latent_shape[0], self.latent_shape[1], mode='res', first_kernel_size=3,
+                                  features=64, layers=7, post_features=1024, bits=np.log2(self.k))
+        else:
+            # TODO: Implement prior models for flatten latent space
+            self.prior = None
+
 
     def forward(self, x):
         batch_size = x.shape[0]
         z_e = self.encoder(x) # encoder to latent space
 
-        z_q, argmin = self.embedding(z_e) # find the nearest embedding
+        z_q, index = self.embedding(z_e) # find the nearest embedding
 
         vq_loss = torch.sum((z_q - z_e.detach()) ** 2) / batch_size
         commit_loss = torch.sum((z_q.detach() - z_e) ** 2) / batch_size
@@ -86,18 +94,28 @@ class VQ_VAE(torch.nn.Module):
             logs = torch.tanh(logs)
             reconstruction_loss = torch.sum((x - output_mu) ** 2 / 2 * torch.exp(-2 * logs) + LOG2PI + logs) / batch_size
 
+        loss = reconstruction_loss + vq_loss + self.beta * commit_loss
         info = {
             "resonstraction_loss" : reconstruction_loss, 
             "vq_loss" : vq_loss, 
             "commitment_loss" :commit_loss
         }
 
-        return reconstruction_loss + vq_loss + self.beta * commit_loss, info
+        if self.prior:
+            if self.network_type == 'fullconv':
+                prior_input = (index.detach().type_as(x) / (self.k - 1)).unsqueeze(1)
+                prior_loss = self.prior(prior_input)
+                loss += prior_loss
+                info['prior_loss'] = prior_loss 
+            else:
+                pass
+
+        return loss, info
 
     def encode(self, x):
         z_e = self.encoder(x) # encoder to latent space
 
-        z_q, argmin = self.embedding(z_e)
+        z_q, index = self.embedding(z_e)
 
         return z_q
     
@@ -112,7 +130,10 @@ class VQ_VAE(torch.nn.Module):
         return result
 
     def sample(self, num, deterministic=True):
-        index = torch.randint(self.k, size=(num, *self.latent_shape)).to(self.embedding.weight.device)
+        if self.prior:
+            index = (self.prior.sample(num).squeeze(1) * (self.k - 1)).long()
+        else:
+            index = torch.randint(self.k, size=(num, *self.latent_shape)).to(self.embedding.weight.device)
         dims = list(range(len(index.shape) + 1))
         z = self.embedding.select(index).permute(0, dims[-1], *dims[1:-1]).contiguous()
         return self.decode(z, deterministic=deterministic)
