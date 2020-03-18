@@ -2,6 +2,7 @@ import torch
 
 from ..utils import bits2nats
 from .modules import Reshape, NICEAdditiveCoupling, Rescale, CoupleSigmoid
+from .trainer import FlowTrainer
 
 class NICE(torch.nn.Module):
     def __init__(self, c=3, h=32, w=32, features=1000, hidden_layers=5, bits=8):
@@ -59,3 +60,6 @@ class NICE(torch.nn.Module):
         z = torch.rand(num_samples, self.z_size, device=device, dtype=torch.float32) * temperature
 
         return self.z2x(z)
+
+    def get_trainer(self):
+        return FlowTrainer

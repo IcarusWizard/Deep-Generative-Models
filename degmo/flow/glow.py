@@ -4,6 +4,7 @@ import numpy as np
 
 from .modules import Dequantization, GlowAffineStep, GlowAdditiveStep
 from .utils import LOG2PI, squeeze, unsqueeze 
+from .trainer import FlowTrainer
 
 class GLOW(torch.nn.Module):
     def __init__(self, c=3, h=32, w=32, features=256, K = 16, L = 3, bits=8, constraint=0.9, coupling='affine', use_lu=True):
@@ -115,3 +116,6 @@ class GLOW(torch.nn.Module):
         z = torch.randn(num_samples, self.z_size, device=device, dtype=dtype) * temperature
 
         return self.z2x(z)
+
+    def get_trainer(self):
+        return FlowTrainer

@@ -60,13 +60,13 @@ def load_config(filename):
         d = json.load(f)
     return d
 
-def config_dataset(args, batch_size=None, normalize=False):
-    workers = min(args.workers, os.cpu_count()) # compute actual workers in use
+def config_dataset(config, batch_size=None, **kargs):
+    workers = min(config['workers'], os.cpu_count()) # compute actual workers in use
     
     if batch_size is None:
-        batch_size = args.batch_size
+        batch_size = config['batch_size']
 
-    train_dataset, val_dataset, test_dataset, model_param = make_dataset(args.dataset, normalize=normalize)
+    train_dataset, val_dataset, test_dataset, model_param = make_dataset(config['dataset'], **kargs)
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, 
         shuffle=True, num_workers=workers, pin_memory=True)
@@ -74,12 +74,12 @@ def config_dataset(args, batch_size=None, normalize=False):
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, num_workers=workers, pin_memory=True)
 
     filenames = {
-        "log_name" : "{}_{}".format(args.model, args.dataset),
-        "model_name" : "{}_{}".format(args.model, args.dataset),
+        "log_name" : "{}_{}".format(config['model'], config['dataset']),
+        "model_name" : "{}_{}".format(config['model'], config['dataset']),
     }
 
-    if args.suffix:
+    if config['suffix']:
         for key in filenames.keys():
-            filenames[key] += '_{}'.format(args.suffix)
+            filenames[key] += '_{}'.format(config['suffix'])
 
     return filenames, model_param, train_loader, val_loader, test_loader

@@ -2,25 +2,55 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
-from . import NICE, RealNVP2D, GLOW
+from . import *
 
-def config_model(train_time_args, args, checkpoint):
+def config_model_train(config, model_param):
+    model_param.update({
+        "features" : config['features'],
+        "bits" : config['bits'],
+    })
+    if config['model']== 'NICE':
+        model_param.update({
+            "hidden_layers" : config['blocks'],
+        })
+        model = NICE(**model_param)        
+    elif config['model']== 'RealNVP':
+        model_param.update({
+            "hidden_blocks" : config['blocks'],
+            "down_sampling" : config['down_sampling'],
+        })
+        model = RealNVP2D(**model_param)
+    elif config['model']== 'Glow':
+        model_param.update({
+            "K" : config['K'],
+            "L" : config['L'],
+            "use_lu" : not config['nolu'],
+            "coupling" : config['coupling'],
+        })
+        model = GLOW(**model_param)
+    else:
+        raise ValueError('Model {} is not supported!'.format(config['model']))
+
+    return model, model_param
+
+def config_model_test(args, checkpoint):
+    config = checkpoint['config']
     # build model
-    if train_time_args.model == 'NICE':
+    if config['model'] == 'NICE':
         assert not args.mode == 'extrapolation', 'NICE do not support mode extrapolation'
         model = NICE(**checkpoint['model_parameters'])
-    elif train_time_args.model == 'RealNVP':
+    elif config['model'] == 'RealNVP':
         if args.mode == 'extrapolation':
             checkpoint['model_parameters']['h'] *= args.scale
             checkpoint['model_parameters']['w'] *= args.scale
         model = RealNVP2D(**checkpoint['model_parameters'])
-    elif train_time_args.model == 'Glow':
+    elif config['model'] == 'Glow':
         if args.mode == 'extrapolation':
             checkpoint['model_parameters']['h'] *= args.scale
             checkpoint['model_parameters']['w'] *= args.scale
         model = GLOW(**checkpoint['model_parameters'])
     else:
-        raise ValueError('Model {} is not supported!'.format(train_time_args.model))
+        raise ValueError('Model {} is not supported!'.format(config['model']))
 
     # load state dict
     state_dict = checkpoint['model_state_dict']

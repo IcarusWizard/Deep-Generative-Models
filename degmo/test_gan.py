@@ -6,7 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 import os, argparse
 from tqdm import tqdm
 
-from degmo.gan.test_utils import config_model, generation, manifold, interpolation, helix_interpolation
+from degmo.gan.run_utils import config_model_test, generation, manifold, interpolation, helix_interpolation
 from degmo.utils import setup_seed, select_gpus, nats2bits, config_dataset, load_config
 from degmo import LOGDIR, MODELDIR, VERSION, CONFIG_PATH
 
@@ -29,18 +29,15 @@ if __name__ == '__main__':
     select_gpus(args.gpu) 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-    checkpoint = torch.load(MODELDIR + args.model + '.pt', map_location='cpu')
+    checkpoint = torch.load(os.path.join(MODELDIR, args.model + '.pt'), map_location='cpu')
 
-    if checkpoint['version'] != VERSION:
-        print('Warning: model version {} doesn\'t match lib version {}!'.format(checkpoint['version'], VERSION))
-
-    train_time_args = checkpoint['train_time_args']
-    print('load model: {}'.format(train_time_args.model))
+    config = checkpoint['config']
+    print('load model: {}'.format(config['model']))
     print('seed: {}'.format(checkpoint['seed']))
     print('model parameters: {}'.format(checkpoint['model_parameters']))
 
     # config model
-    generator, latent_dim = config_model(train_time_args, checkpoint)
+    generator, latent_dim = config_model_test(checkpoint)
     generator = generator.to(device)
 
     if args.mode == 'generation':

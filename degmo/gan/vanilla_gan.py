@@ -2,6 +2,7 @@ import torch
 from torch.functional import F
 
 from .modules import MLPGenerator, MLPDiscriminator
+from .trainer import AdversarialTrainer
 
 class GAN(torch.nn.Module):
     def __init__(self, c, h, w, latent_dim, 
@@ -47,3 +48,6 @@ class GAN(torch.nn.Module):
         fake_label = torch.ones_like(fake_logit)
 
         return self.criterion(fake_logit, fake_label)
+
+    def get_trainer(self):
+        return AdversarialTrainer

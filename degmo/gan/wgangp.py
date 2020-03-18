@@ -4,6 +4,7 @@ import numpy as np
 
 from .modules import ConvGenerator, ConvDiscriminator, ResGenerator, ResDiscriminator
 from .utils import weights_init
+from .trainer import AdversarialTrainer
 
 class WGANGP(torch.nn.Module):
     def __init__(self, c, h, w, mode, latent_dim, _lambda,
@@ -56,3 +57,6 @@ class WGANGP(torch.nn.Module):
 
     def get_generator_loss(self, fake):
         return torch.mean(self.discriminate(fake))
+
+    def get_trainer(self):
+        return AdversarialTrainer

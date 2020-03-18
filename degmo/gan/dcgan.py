@@ -4,6 +4,7 @@ import numpy as np
 
 from .modules import ConvGenerator, ConvDiscriminator
 from .utils import weights_init
+from .trainer import AdversarialTrainer
 
 class DCGAN(torch.nn.Module):
     def __init__(self, c, h, w, latent_dim, discriminator_features, generator_features):
@@ -56,3 +57,6 @@ class DCGAN(torch.nn.Module):
         fake_label = torch.ones_like(fake_logit)
 
         return self.criterion(fake_logit, fake_label)
+
+    def get_trainer(self):
+        return AdversarialTrainer

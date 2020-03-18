@@ -4,6 +4,7 @@ import numpy as np
 
 from .modules import MLPEncoder, MLPDecoder, ConvEncoder, ConvDecoder
 from .utils import get_kl, LOG2PI
+from .trainer import VAETrainer
 
 class VAE(torch.nn.Module):
     r"""
@@ -78,8 +79,8 @@ class VAE(torch.nn.Module):
         reconstruction_loss = torch.mean(torch.sum(reconstruction_loss, dim=(1, 2, 3)))
 
         return kl + reconstruction_loss, {
-            "KL divergence" : kl,
-            "Reconstruction loss" : reconstruction_loss,
+            "KL divergence" : kl.item(),
+            "Reconstruction loss" : reconstruction_loss.item(),
         }
     
     def encode(self, x):
@@ -116,3 +117,6 @@ class VAE(torch.nn.Module):
         z = torch.randn(number, self.latent_dim, device=device)
 
         return self.decode(z, deterministic=deterministic)
+
+    def get_trainer(self):
+        return VAETrainer

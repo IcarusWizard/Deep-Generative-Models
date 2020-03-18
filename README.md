@@ -64,10 +64,9 @@ degmo/         # main folder
   config/        # default configurations
   utils.py       # shared utility functions
   modules.py     # shared utility modules
-  datasets.py    # data utilities
   <method>/
-    train_utils.py    # training procedure
-    test_utils.py     # test functions
+    trainer.py        # training procedure
+    run_utils.py      # runtime utility functions
     utils.py          # method's utility functions
     modules.py        # method's utility modules
     <model.py>        # model class

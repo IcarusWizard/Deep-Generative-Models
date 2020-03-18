@@ -4,5 +4,3 @@ from .wgan import WGAN
 from .wgangp import WGANGP
 from .sngan import SNGAN
 from .sagan import SAGAN
-
-from .train_utils import train_gan, config_model

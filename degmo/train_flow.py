@@ -6,7 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 import os, argparse
 
 import degmo
-from degmo.flow import config_model, train_flow
+from degmo.flow.run_utils import config_model_train
 from degmo.utils import config_dataset, setup_seed, step_loader, select_gpus, nats2bits, load_config
 from degmo import LOGDIR, MODELDIR, VERSION, CONFIG_PATH
 
@@ -61,14 +61,13 @@ if __name__ == '__main__':
             print("Warning: there is no default config for the combination of {} and {}, use custom config instead!".format(
                 args.model, args.dataset
             ))
-    
-    # config gpu
-    select_gpus(args.gpu) 
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+    config = args.__dict__
     
     # setup random seed
     seed = args.seed if args.seed else np.random.randint(0, 100000)
     setup_seed(seed) 
+    config['seed'] = seed
 
     # create output folder
     if not os.path.exists(LOGDIR):
@@ -77,26 +76,18 @@ if __name__ == '__main__':
         os.makedirs(MODELDIR)
 
     # config dataset
-    filenames, model_param, train_loader, val_loader, test_loader = config_dataset(args)
+    filenames, model_param, train_loader, val_loader, test_loader = config_dataset(config)
 
     # config model
-    model, model_param = config_model(args, model_param)
-    
-    model = model.to(device)
+    model, model_param = config_model_train(config, model_param)
 
-    # open writer
-    writer = SummaryWriter(os.path.join(LOGDIR, '{}'.format(filenames['log_name'])))
+    config['model_param'] = model_param
+    config['log_name'] = os.path.join(LOGDIR, '{}'.format(filenames['log_name']))
 
-    # train model
-    model, optim, test_loss = train_flow(model, writer, train_loader, val_loader, test_loader, args)
+    # train the model
+    trainer = model.get_trainer()
+    trainer = trainer(model, train_loader, val_loader, test_loader, config)
+    trainer.train()
 
-    dim = model_param['c'] * model_param['h'] * model_param['w']
-    torch.save({
-        "model_state_dict" : model.state_dict(),
-        "optimizer_state_dict" : optim.state_dict(),
-        "finial_test_loss" : nats2bits(test_loss.item()) / dim,
-        "train_time_args" : args,
-        "model_parameters" : model_param,
-        "seed" : seed,
-        "version" : VERSION,
-    }, os.path.join(MODELDIR, '{}.pt'.format(filenames['model_name'])))
+    # save final checkpoint
+    trainer.save(os.path.join(MODELDIR, '{}.pt'.format(filenames['model_name'])))

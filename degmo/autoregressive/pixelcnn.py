@@ -4,6 +4,7 @@ import numpy as np
 
 from .modules import MaskConv, MaskRes, GatePixelCNNBlock
 from .utils import build_maskA, build_maskB
+from .trainer import AutoregressiveTrainer
 
 class PixelCNN(torch.nn.Module):
     """
@@ -115,3 +116,6 @@ class PixelCNN(torch.nn.Module):
             output = self.output_conv(horizontal)
 
         return [F.log_softmax(chunk, dim=1) for chunk in torch.chunk(output, self.c, dim=1)]
+
+    def get_trainer(self):
+        return AutoregressiveTrainer

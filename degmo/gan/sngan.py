@@ -4,6 +4,7 @@ import numpy as np
 
 from .modules import ConvGenerator, ConvDiscriminator, ResGenerator, ResDiscriminator
 from .utils import weights_init, add_sn
+from .trainer import AdversarialTrainer
 
 class SNGAN(torch.nn.Module):
     def __init__(self, c, h, w, mode, latent_dim,
@@ -59,3 +60,6 @@ class SNGAN(torch.nn.Module):
         fake_label = torch.ones_like(fake_logit)
 
         return self.criterion(fake_logit, fake_label)
+
+    def get_trainer(self):
+        return AdversarialTrainer

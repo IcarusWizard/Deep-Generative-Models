@@ -4,6 +4,7 @@ import numpy as np
 
 from .modules import SelfAttentionGenerator, SelfAttentionDiscriminator
 from .utils import add_sn
+from .trainer import AdversarialTrainer
 
 class SAGAN(torch.nn.Module):
     def __init__(self, c, h, w, latent_dim,
@@ -46,3 +47,6 @@ class SAGAN(torch.nn.Module):
         fake_score = self.discriminate(fake)
 
         return - torch.mean(fake_score)
+
+    def get_trainer(self):
+        return AdversarialTrainer

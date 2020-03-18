@@ -5,6 +5,7 @@ import numpy as np
 from degmo.flow.distribution import FlowDistribution1D
 from .modules import MLPEncoder, MLPDecoder, ConvEncoder, ConvDecoder
 from .utils import get_kl, LOG2PI
+from .trainer import VAETrainer
 
 class FVAE(torch.nn.Module):
     def __init__(self, c=3, h=32, w=32, latent_dim=2, network_type='conv', config={},  
@@ -55,9 +56,9 @@ class FVAE(torch.nn.Module):
         extra_info = torch.mean(prior_prob - init_prior_prob) # D_KL(p_{\theta} || p_{\theta_{init}})
 
         return kl + reconstruction_loss, {
-            "KL divergence" : kl,
-            "Reconstruction loss" : reconstruction_loss,
-            "Extra information" : extra_info,
+            "KL divergence" : kl.item(),
+            "Reconstruction loss" : reconstruction_loss.item(),
+            "Extra information" : extra_info.item(),
         }
     
     def encode(self, x):
@@ -80,3 +81,6 @@ class FVAE(torch.nn.Module):
         z = self.prior.sample(num=number)
 
         return self.decode(z, deterministic=deterministic)
+
+    def get_trainer(self):
+        return VAETrainer

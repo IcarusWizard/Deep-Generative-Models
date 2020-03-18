@@ -3,24 +3,86 @@ import numpy as np
 from scipy.stats import truncnorm
 import matplotlib.pyplot as plt
 
-import os, tempfile
+import os, tempfile, time
 from moviepy import editor as mpy
 
-from . import GAN, DCGAN, WGAN, WGANGP, SNGAN, SAGAN
+from . import *
 
-def config_model(train_time_args, checkpoint):
+def config_model_train(config, model_param):
+    if config['model']== 'GAN':
+        model_param.update({
+            "latent_dim" : config['latent_dim'],
+            "discriminator_features" : config['discriminator_features'],
+            "discriminator_hidden_layers" : config['discriminator_hidden_layers'],
+            "generator_features" : config['generator_features'],
+            "generator_hidden_layers" : config['generator_hidden_layers'],
+        })
+        model = GAN(**model_param)  
+    elif config['model'] == 'DCGAN':
+        model_param.update({
+            "latent_dim" : config['latent_dim'],
+            "discriminator_features" : config['discriminator_features'], 
+            "generator_features" : config['generator_features'],
+        })              
+        model = DCGAN(**model_param)
+    elif config['model'] == 'WGAN':
+        model_param.update({
+            "mode" : config['mode'],
+            "latent_dim" : config['latent_dim'],
+            "discriminator_features" : config['discriminator_features'], 
+            "discriminator_hidden_layers" : config['discriminator_hidden_layers'],
+            "generator_features" : config['generator_features'],
+            "generator_hidden_layers" : config['generator_hidden_layers'],
+            "use_norm_discriminator" : config['use_norm_discriminator'],
+            "use_norm_generator" : config['use_norm_generator'],
+        })
+        model = WGAN(**model_param) 
+    elif config['model'] == 'WGAN-GP':
+        model_param.update({
+            "mode" : config['mode'],
+            "latent_dim" : config['latent_dim'],
+            "_lambda" : config['_lambda'],
+            "discriminator_features" : config['discriminator_features'], 
+            "discriminator_hidden_layers" : config['discriminator_hidden_layers'],
+            "generator_features" : config['generator_features'],
+        })
+        model = WGANGP(**model_param)      
+    elif config['model'] == 'SNGAN':
+        model_param.update({
+            "mode" : config['mode'],
+            "latent_dim" : config['latent_dim'],
+            "discriminator_features" : config['discriminator_features'],
+            "discriminator_hidden_layers" : config['discriminator_hidden_layers'],
+            "generator_features" : config['generator_features'],
+        })
+        model = SNGAN(**model_param)         
+    elif config['model'] == 'SAGAN':
+        model_param.update({
+            "latent_dim" : config['latent_dim'],
+            "discriminator_features" : config['discriminator_features'], 
+            "discriminator_hidden_layers" : config['discriminator_hidden_layers'],
+            "generator_features" : config['generator_features'],
+        })
+        model = SAGAN(**model_param)       
+    else:
+        raise ValueError('Model {} is not supported!'.format(config['model']))
+
+    return model, model_param
+
+def config_model_test(checkpoint):
+    model_name = checkpoint['config']['model']
     # build model
-    if train_time_args.model == 'GAN':
+    if model_name == 'GAN':
         model = GAN(**checkpoint['model_parameters'])
-    elif train_time_args.model == 'DCGAN':
+    elif model_name == 'DCGAN':
         model = DCGAN(**checkpoint['model_parameters'])
-    elif train_time_args.model == 'WGAN':
+    elif model_name == 'WGAN':
         model = WGAN(**checkpoint['model_parameters'])
-    elif train_time_args.model == 'WGAN-GP':
+    elif model_name == 'WGAN-GP':
         model = WGANGP(**checkpoint['model_parameters'])
-    elif train_time_args.model == 'SNGAN':
+    elif model_name == 'SNGAN':
         model = SNGAN(**checkpoint['model_parameters'])
-    elif train_time_args.model == 'SAGAN':
+    elif model_name == 'SAGAN':
         model = SAGAN(**checkpoint['model_parameters'])
 
     # only restore generator checkpoint
@@ -172,7 +234,7 @@ def interpolation(generator, latent_dim, writer, truncation, num=10, frames=30):
     writer.add_video('interpolation', imgs, fps=frames)
 
     # save gif to temp folder
-    filename = os.path.join(tempfile.gettempdir(), 'interpolation.gif')
+    filename = os.path.join(tempfile.gettempdir(), 'interpolation {}.gif'.format(time.ctime()))
     imgs = imgs[0].permute(0, 2, 3, 1).numpy() * 255
     clip = mpy.ImageSequenceClip([imgs[i] for i in range(imgs.shape[0])], fps=frames)
     clip.write_gif(filename, verbose=False, logger=None)
@@ -212,7 +274,7 @@ def helix_interpolation(generator, latent_dim, writer, truncation, num=10, frame
     writer.add_video('interpolation', imgs.unsqueeze(dim=0), fps=frames)
 
     # save gif to temp folder
-    filename = os.path.join(tempfile.gettempdir(), 'interpolation.gif')
+    filename = os.path.join(tempfile.gettempdir(), 'interpolation {}.gif'.format(time.ctime()))
     imgs = imgs.permute(0, 2, 3, 1).numpy() * 255
     clip = mpy.ImageSequenceClip([imgs[i] for i in range(imgs.shape[0])], fps=frames // 4)
     clip.write_gif(filename, verbose=False, logger=None)

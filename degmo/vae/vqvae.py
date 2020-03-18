@@ -8,6 +8,7 @@ from degmo.autoregressive.pixelcnn import PixelCNN
 from .modules import FullConvEncoder, FullConvDecoder, ConvEncoder, ConvDecoder, MLPEncoder, MLPDecoder, \
     Flatten, Unflatten, NearestEmbed
 from .utils import LOG2PI
+from .trainer import VAETrainer
 
 class VQ_VAE(torch.nn.Module):
     r"""
@@ -96,9 +97,9 @@ class VQ_VAE(torch.nn.Module):
 
         loss = reconstruction_loss + vq_loss + self.beta * commit_loss
         info = {
-            "resonstraction_loss" : reconstruction_loss, 
-            "vq_loss" : vq_loss, 
-            "commitment_loss" :commit_loss
+            "resonstraction_loss" : reconstruction_loss.item(), 
+            "vq_loss" : vq_loss.item(), 
+            "commitment_loss" :commit_loss.item()
         }
 
         if self.prior:
@@ -106,7 +107,7 @@ class VQ_VAE(torch.nn.Module):
                 prior_input = (index.detach().type_as(x) / (self.k - 1)).unsqueeze(1)
                 prior_loss = self.prior(prior_input)
                 loss += prior_loss
-                info['prior_loss'] = prior_loss 
+                info['prior_loss'] = prior_loss.item() 
             else:
                 pass
 
@@ -137,3 +138,6 @@ class VQ_VAE(torch.nn.Module):
         dims = list(range(len(index.shape) + 1))
         z = self.embedding.select(index).permute(0, dims[-1], *dims[1:-1]).contiguous()
         return self.decode(z, deterministic=deterministic)
+
+    def get_trainer(self):
+        return VAETrainer

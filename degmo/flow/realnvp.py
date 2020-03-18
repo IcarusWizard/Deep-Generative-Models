@@ -4,6 +4,7 @@ import numpy as np
 
 from ..utils import bits2nats
 from .modules import Dequantization, MultiLayerBlock, ChessboardCoupleLayer
+from .trainer import FlowTrainer
     
 class RealNVP2D(torch.nn.Module):
     def __init__(self, c=3, h=32, w=32, features=32, hidden_blocks=4, down_sampling=3, bits=8):
@@ -91,3 +92,6 @@ class RealNVP2D(torch.nn.Module):
         z = torch.randn(num_samples, self.z_size, device=device, dtype=torch.float32) * temperature
 
         return self.z2x(z)
+
+    def get_trainer(self):
+        return FlowTrainer

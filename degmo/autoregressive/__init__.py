@@ -1,1 +1,2 @@
-from .train_utils import train_autoregressive, config_model
+from .pixelcnn import PixelCNN
+from .pixelrnn import PixelRNN

@@ -7,7 +7,7 @@ import os, argparse
 from tqdm import tqdm
 
 import degmo
-from degmo.gan import config_model, train_gan
+from degmo.gan.run_utils import config_model_train
 from degmo.utils import setup_seed, select_gpus, nats2bits, config_dataset, load_config
 from degmo import LOGDIR, MODELDIR, VERSION, CONFIG_PATH
 
@@ -66,14 +66,13 @@ if __name__ == '__main__':
             print("Warning: there is no default config for the combination of {} and {}, use custom config instead!".format(
                 args.model, args.dataset
             ))
-    
-    # config gpu
-    select_gpus(args.gpu) 
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+    config = args.__dict__
     
     # setup random seed
     seed = args.seed if args.seed else np.random.randint(0, 100000)
     setup_seed(seed) 
+    config['seed'] = seed
 
     # create output folder
     if not os.path.exists(LOGDIR):
@@ -82,24 +81,18 @@ if __name__ == '__main__':
         os.makedirs(MODELDIR)
 
     # config dataset
-    filenames, model_param, train_loader, _, _ = config_dataset(args, normalize=True) # only need train dataset for GAN
+    filenames, model_param, train_loader, _, _ = config_dataset(config, normalize=True) # only need train dataset for GAN
 
     # config model
-    model, model_param = config_model(args, model_param)
-    model = model.to(device)
+    model, model_param = config_model_train(config, model_param)
+    
+    config['model_param'] = model_param
+    config['log_name'] = os.path.join(LOGDIR, '{}'.format(filenames['log_name']))
 
-    # open log
-    writer = SummaryWriter(os.path.join(LOGDIR, '{}'.format(filenames['log_name'])))
+    # train the model
+    trainer = model.get_trainer()
+    trainer = trainer(model, train_loader, config=config)
+    trainer.train()
 
-    # train model
-    model, discriminator_optim, generator_optim = train_gan(model, writer, train_loader, args)
-
-    # save checkpoint
-    torch.save({
-        "discriminator_state_dict" : model.discriminator.state_dict(),
-        "generator_state_dict" : model.generator.state_dict(),
-        "train_time_args" : args,
-        "model_parameters" : model_param,
-        "seed" : seed,
-        "version" : VERSION,
-    }, os.path.join(MODELDIR,'{}.pt'.format(filenames['model_name'])))
+    # save final checkpoint
+    trainer.save(os.path.join(MODELDIR, '{}.pt'.format(filenames['model_name'])))
