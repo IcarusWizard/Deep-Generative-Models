@@ -80,7 +80,7 @@ class VAE(torch.nn.Module):
 
         return kl + reconstruction_loss, {
             "KL divergence" : kl.item(),
-            "Reconstruction loss" : reconstruction_loss.item(),
+            "reconstruction loss" : reconstruction_loss.item(),
         }
     
     def encode(self, x):

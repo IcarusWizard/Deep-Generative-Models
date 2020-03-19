@@ -57,8 +57,8 @@ class FVAE(torch.nn.Module):
 
         return kl + reconstruction_loss, {
             "KL divergence" : kl.item(),
-            "Reconstruction loss" : reconstruction_loss.item(),
-            "Extra information" : extra_info.item(),
+            "reconstruction loss" : reconstruction_loss.item(),
+            "extra information" : extra_info.item(),
         }
     
     def encode(self, x):
