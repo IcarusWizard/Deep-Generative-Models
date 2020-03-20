@@ -30,7 +30,7 @@ class FVAE(torch.nn.Module):
 
     def forward(self, x):
         mu, logs = torch.chunk(self.encoder(x), 2, dim=1)
-        torch.clamp_max(logs, 10) # limit the max logs, prevent inf in kl
+        logs = torch.clamp_max(logs, 10) # limit the max logs, prevent inf in kl
 
         # reparameterize trick
         epsilon = torch.randn_like(logs)
@@ -64,7 +64,7 @@ class FVAE(torch.nn.Module):
     
     def encode(self, x):
         mu, logs = torch.chunk(self.encoder(x), 2, dim=1)
-        torch.clamp_max(logs, 10)
+        logs = torch.clamp_max(logs, 10)
         return mu
 
     def decode(self, z, deterministic=True):
