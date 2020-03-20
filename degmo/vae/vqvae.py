@@ -97,7 +97,7 @@ class VQ_VAE(torch.nn.Module):
 
         loss = reconstruction_loss + vq_loss + self.beta * commit_loss
         info = {
-            "resonstraction_loss" : reconstruction_loss.item(), 
+            "reconstruction_loss" : reconstruction_loss.item(), 
             "vq_loss" : vq_loss.item(), 
             "commitment_loss" :commit_loss.item()
         }
