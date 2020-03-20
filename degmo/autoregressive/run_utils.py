@@ -1,8 +1,7 @@
-from .pixelrnn import PixelRNN
-from .pixelcnn import PixelCNN
-
 import torch
 import numpy as np
+
+from . import *
 
 def config_model_train(config, model_param):
     if config['model']== 'PixelRNN':

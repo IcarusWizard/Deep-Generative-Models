@@ -1,6 +1,5 @@
-from .vae import VAE
-from .fvae import FVAE
-from .vqvae import VQ_VAE
+from . import * 
+
 import torch
 
 def config_model_train(config, model_param):
