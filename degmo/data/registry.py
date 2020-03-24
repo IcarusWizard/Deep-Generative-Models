@@ -1,7 +1,9 @@
+import importlib
+
 class DatasetRegistry(object):
     """
         This data structure maintain a global registry for different datasets.
-        Dataset should be store here as a pair of a name and a callable function.  
+        Dataset should be store here as a pair of a name and a callable function or a string likes 'module:func'.  
     """
     def __init__(self):
         self.dataset_dict = {}
@@ -11,8 +13,19 @@ class DatasetRegistry(object):
             print('Warning: overwriting dataset function for {}'.format(name))
         self.dataset_dict[name] = fn
 
+    def parse_string(self, string):
+        module, function = string.split(':')
+        mod = importlib.import_module(module)
+        fn = getattr(mod, function)
+        return fn
+
     def make(self, name, **kwargs):
-        fn = self.dataset_dict[name]
+        if name in self.dataset_dict.keys():
+            fn = self.dataset_dict[name]
+            fn = fn if callable(fn) else self.parse_string(fn)
+        else:
+            fn = self.parse_string(name)
+
         return fn(**kwargs)
 
 # create a global registry
